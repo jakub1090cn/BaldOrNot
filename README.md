@@ -1,1 +1,1 @@
-"# BaldOrNot" 
+# BaldOrNot AI ML project
