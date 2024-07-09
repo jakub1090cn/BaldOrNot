@@ -11,6 +11,7 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 - [ ] Documentation update
+- [ ] Changes that do not directly affect the source code or tests
 
 
 ## Checklist
