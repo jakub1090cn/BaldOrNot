@@ -26,7 +26,6 @@ python3.12 --version
 ```
 
 Make sure to use a virtual environment to manage dependencies specific to this project.
-```
 
 ## Code Style
 
