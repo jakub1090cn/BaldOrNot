@@ -1,14 +1,35 @@
+Sure, here's the updated `CONTRIBUTING.md` file with the information about using Python version 3.12.3:
+
+```markdown
 # Contributing to [Project-Name]
 
 ## Table of Contents
 
-1. [Code Style](#code-style)
-2. [Documentation](#documentation)
-3. [Directory Structure](#directory-structure)
-4. [Testing](#testing)
-5. [Version Control](#version-control)
-6. [Code Reviews](#code-reviews)
-7. [Additional Resources](#additional-resources)
+1. [Python Version](#python-version)
+2. [Code Style](#code-style)
+3. [Documentation](#documentation)
+4. [Directory Structure](#directory-structure)
+5. [Testing](#testing)
+6. [Version Control](#version-control)
+7. [Code Reviews](#code-reviews)
+8. [Additional Resources](#additional-resources)
+
+## Python Version
+
+This project requires Python version 3.12.3. Ensure you have the correct version installed by running:
+
+```sh
+python --version
+```
+
+Or if you have multiple versions of Python installed, you can specify the version explicitly:
+
+```sh
+python3.12 --version
+```
+
+Make sure to use a virtual environment to manage dependencies specific to this project.
+```
 
 ## Code Style
 
@@ -119,4 +140,3 @@ def test_train_model():
 - [PEP 8](https://www.python.org/dev/peps/pep-0008/): Python style guide.
 - [Google Python Style Guide](http://google.github.io/styleguide/pyguide.html): Google's style guide for Python.
 - [Conventional Commits](https://www.conventionalcommits.org/): A specification for adding human and machine-readable meaning to commit messages.
-```
