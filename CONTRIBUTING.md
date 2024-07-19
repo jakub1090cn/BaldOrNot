@@ -1,5 +1,3 @@
-Sure, here's the updated `CONTRIBUTING.md` file with the information about using Python version 3.12.3:
-
 ```markdown
 # Contributing to [Project-Name]
 
