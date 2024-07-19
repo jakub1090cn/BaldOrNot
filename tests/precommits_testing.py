@@ -1,4 +1,4 @@
-# Uncorrect version - please uncomment to test
+# Uncorrect version: please uncomment to test
 
 # import os, sys  # Style error (flake8)
 #
