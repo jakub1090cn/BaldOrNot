@@ -17,5 +17,5 @@ def create_model():
     x = GlobalAveragePooling2D()(x)
     x = Dense(NUM_DENSE_UNITS, activation="relu")(x)
     predictions = Dense(1, activation="sigmoid")(x)
-    model = Model(inputs=base_model.input, outputs=predictions)
+    model = Model(inputs=inputs, outputs=predictions)
     return model
