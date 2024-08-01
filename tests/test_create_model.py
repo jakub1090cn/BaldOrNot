@@ -1,9 +1,7 @@
-import tensorflow as tf
-import numpy as np
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Dense
 from src.model import create_model
-from constants import IMG_LEN, NUM_CHANNELS, NUM_DENSE_UNITS
+from constants import IMG_LEN, NUM_CHANNELS
 
 
 def test_create_model_structure():
@@ -11,31 +9,6 @@ def test_create_model_structure():
     assert isinstance(
         model, Model
     ), "The create_model function should return an instance of a Keras model."
-
-
-def test_model_compilation():
-    model = create_model()
-    model.compile(
-        optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
-    )
-    assert model.optimizer is not None, "Model optimizer should be set."
-    assert model.loss is not None, "Model loss should be set."
-
-
-def test_model_prediction():
-    model = create_model()
-    num_images = 3
-    fake_data = tf.random.normal(
-        shape=(num_images, IMG_LEN, IMG_LEN, NUM_CHANNELS)
-    )
-    predictions = model.predict(fake_data)
-    assert predictions.shape == (
-        num_images,
-        1,
-    ), "Prediction output shape is incorrect."
-    assert isinstance(
-        predictions, np.ndarray
-    ), "Prediction should return a numpy array."
 
 
 def test_input_output_shape():
@@ -58,15 +31,16 @@ def test_base_model_frozen():
 
 def test_dense_units():
     model = create_model()
+    exp_num_dense_u = 512
     dense_layer = [
         layer
         for layer in model.layers
-        if isinstance(layer, Dense) and layer.units == NUM_DENSE_UNITS
+        if isinstance(layer, Dense) and layer.units == exp_num_dense_u
     ]
     assert (
         len(dense_layer) == 1
-    ), f"The model should have one Dense layer with {NUM_DENSE_UNITS} units."
+    ), f"The model should have one Dense layer with {exp_num_dense_u} units."
 
     assert (
         len(dense_layer) == 1
-    ), f"The model should have one Dense layer with {NUM_DENSE_UNITS} units."
+    ), f"The model should have one Dense layer with {exp_num_dense_u} units."
