@@ -1,21 +1,23 @@
-from tensorflow.keras.models import Model
-from tensorflow.keras.applications import ConvNeXtTiny
-from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Input
+import tensorflow as tf
 from constants import IMG_LEN, NUM_CHANNELS
 
 
-def create_model(num_dense_units=512):
-    base_model = ConvNeXtTiny(
-        weights="imagenet",
-        include_top=False,
-        input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS),
-    )
-    for layer in base_model.layers:
-        layer.trainable = False
-    inputs = Input(shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS))
-    x = base_model(inputs)
-    x = GlobalAveragePooling2D()(x)
-    x = Dense(num_dense_units, activation="relu")(x)
-    predictions = Dense(1, activation="sigmoid")(x)
-    model = Model(inputs=inputs, outputs=predictions)
-    return model
+class BaldOrNotModel(tf.keras.Model):
+    def __init__(self, freeze_backbone=True):
+        super().__init__()
+
+        self.convnext_tiny = tf.keras.applications.ConvNeXtTiny(
+            include_top=False, input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS)
+        )
+        if freeze_backbone:
+            self.convnext_tiny.trainable = False
+
+        self.gap = tf.keras.layers.GlobalAveragePooling2D()
+        self.dense = tf.keras.layers.Dense(512, activation="relu")
+        self.predictions = tf.keras.layers.Dense(1, activation="sigmoid")
+
+    def call(self, inputs):
+        x = self.convnext_tiny(inputs)
+        x = self.gap(x)
+        x = self.dense(x)
+        return self.predictions(x)
