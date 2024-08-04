@@ -35,6 +35,9 @@ def test_model_prediction_shape(model):
         f"Expected output shape {expected_output_shape}, "
         f"but got {predictions.shape}"
     )
+    assert (predictions >= 0).all() and (
+        predictions <= 1
+    ).all(), f"Predictions should be in range [0, 1], but got {predictions}"
 
 
 if __name__ == "__main__":
