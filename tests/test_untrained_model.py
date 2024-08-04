@@ -6,10 +6,25 @@ from src.constants import IMG_LEN, NUM_CHANNELS
 
 @pytest.fixture
 def model():
+    """
+    Fixture to create an instance of the BaldOrNotModel.
+
+    Returns:
+        BaldOrNotModel: An instance of the BaldOrNotModel class.
+    """
     return BaldOrNotModel()
 
 
 def test_model_compile(model):
+    """
+    Test to ensure the model can be compiled without errors.
+
+    Args:
+        model (BaldOrNotModel): An instance of the BaldOrNotModel class.
+
+    Asserts:
+        The model compiles without raising an exception.
+    """
     try:
         model.compile(
             optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
@@ -19,6 +34,17 @@ def test_model_compile(model):
 
 
 def test_model_prediction_shape(model):
+    """
+    Test to ensure the model's predictions have the correct shape and are
+    within the expected range.
+
+    Args:
+        model (BaldOrNotModel): An instance of the BaldOrNotModel class.
+
+    Asserts:
+        The predictions have the correct shape (num_images, 1).
+        The predictions are within the range [0, 1].
+    """
     num_images = 3
     fake_data = tf.random.normal(
         shape=(num_images, IMG_LEN, IMG_LEN, NUM_CHANNELS)
@@ -30,6 +56,7 @@ def test_model_prediction_shape(model):
         predictions = model.predict(fake_data)
     except Exception as e:
         pytest.fail(f"Model prediction failed: {e}")
+
     expected_output_shape = (num_images, 1)
     assert predictions.shape == expected_output_shape, (
         f"Expected output shape {expected_output_shape}, "
