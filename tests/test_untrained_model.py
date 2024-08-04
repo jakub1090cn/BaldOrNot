@@ -1,7 +1,7 @@
 import pytest
 import tensorflow as tf
 from src.model import BaldOrNotModel
-from constants import IMG_LEN, NUM_CHANNELS
+from src.constants import IMG_LEN, NUM_CHANNELS
 
 
 @pytest.fixture
