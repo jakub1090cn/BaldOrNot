@@ -1,5 +1,5 @@
 import tensorflow as tf
-from src.config import DENSE_UNITS
+from src.config_constants import DENSE_UNITS
 from src.constants import IMG_LEN, NUM_CHANNELS
 
 
