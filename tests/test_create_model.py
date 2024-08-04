@@ -1,6 +1,7 @@
 import pytest
 import tensorflow as tf
 from src.model import BaldOrNotModel
+from src.constants import IMG_LEN, NUM_CHANNELS
 
 
 @pytest.fixture
@@ -25,6 +26,25 @@ def test_model_trainability(freeze_backbone):
     assert model.convnext_tiny.trainable is not freeze_backbone
     assert model.dense.trainable
     assert model.predictions.trainable
+
+
+@pytest.mark.parametrize(
+    "dropout_rate, should_contain_dropout",
+    [
+        (None, False),
+        (0.5, True),
+    ],
+)
+def test_dropout_possibility(dropout_rate, should_contain_dropout):
+    model = BaldOrNotModel(dropout_rate=dropout_rate)
+    model.build(input_shape=(None, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+    contains_dropout = any(
+        isinstance(layer, tf.keras.layers.Dropout) for layer in model.layers
+    )
+    assert contains_dropout == should_contain_dropout, (
+        f"Expected Dropout layer presence: {should_contain_dropout}, "
+        f"but got: {contains_dropout}"
+    )
 
 
 if __name__ == "__main__":
