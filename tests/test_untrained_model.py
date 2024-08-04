@@ -5,7 +5,7 @@ from src.constants import IMG_LEN, NUM_CHANNELS
 
 
 @pytest.fixture
-def model():
+def model() -> BaldOrNotModel:
     """
     Fixture to create an instance of the BaldOrNotModel.
 
@@ -15,7 +15,7 @@ def model():
     return BaldOrNotModel()
 
 
-def test_model_compile(model):
+def test_model_compile(model: BaldOrNotModel) -> None:
     """
     Test to ensure the model can be compiled without errors.
 
@@ -33,7 +33,7 @@ def test_model_compile(model):
         pytest.fail(f"Model compilation failed: {e}")
 
 
-def test_model_prediction_shape(model):
+def test_model_prediction_shape(model: BaldOrNotModel) -> None:
     """
     Test to ensure the model's predictions have the correct shape and are
     within the expected range.

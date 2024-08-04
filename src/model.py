@@ -26,24 +26,34 @@ class BaldOrNotModel(tf.keras.Model):
         sigmoid activation.
     """
 
-    def __init__(self, freeze_backbone=True, dropout_rate=None):
+    def __init__(
+        self, freeze_backbone: bool = True, dropout_rate: float | None = None
+    ):
         super().__init__()
-        self.convnext_tiny = tf.keras.applications.ConvNeXtTiny(
-            include_top=False, input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS)
+        self.convnext_tiny: tf.keras.Model = (
+            tf.keras.applications.ConvNeXtTiny(
+                include_top=False, input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS)
+            )
         )
         if freeze_backbone:
             self.convnext_tiny.trainable = False
 
-        self.gap = tf.keras.layers.GlobalAveragePooling2D()
-        self.dense = tf.keras.layers.Dense(DENSE_UNITS, activation="relu")
-        self.dropout = (
+        self.gap: tf.keras.layers.Layer = (
+            tf.keras.layers.GlobalAveragePooling2D()
+        )
+        self.dense: tf.keras.layers.Layer = tf.keras.layers.Dense(
+            DENSE_UNITS, activation="relu"
+        )
+        self.dropout: tf.keras.layers.Layer | None = (
             tf.keras.layers.Dropout(dropout_rate)
             if dropout_rate is not None
             else None
         )
-        self.predictions = tf.keras.layers.Dense(1, activation="sigmoid")
+        self.predictions: tf.keras.layers.Layer = tf.keras.layers.Dense(
+            1, activation="sigmoid"
+        )
 
-    def call(self, inputs):
+    def call(self, inputs: tf.Tensor) -> tf.Tensor:
         """
         Forward pass of the model.
 

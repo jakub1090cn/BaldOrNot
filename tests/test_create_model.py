@@ -5,7 +5,7 @@ from src.constants import IMG_LEN, NUM_CHANNELS
 
 
 @pytest.fixture
-def model():
+def model() -> BaldOrNotModel:
     """
     Fixture for creating an instance of the BaldOrNotModel.
 
@@ -15,7 +15,7 @@ def model():
     return BaldOrNotModel()
 
 
-def test_model_creation(model):
+def test_model_creation(model: BaldOrNotModel) -> None:
     """
     Test if the model is an instance of tf.keras.Model.
 
@@ -29,7 +29,7 @@ def test_model_creation(model):
     assert isinstance(model, tf.keras.Model)
 
 
-def test_model_structure(model):
+def test_model_structure(model: BaldOrNotModel) -> None:
     """
     Test the structure of the BaldOrNotModel.
 
@@ -46,7 +46,7 @@ def test_model_structure(model):
 
 
 @pytest.mark.parametrize("freeze_backbone", [True, False])
-def test_model_trainability(freeze_backbone):
+def test_model_trainability(freeze_backbone: bool) -> None:
     """
     Test the trainability of the model's layers based on the freeze_backbone
     parameter.
@@ -71,7 +71,9 @@ def test_model_trainability(freeze_backbone):
         (0.5, True),
     ],
 )
-def test_dropout_possibility(dropout_rate, should_contain_dropout):
+def test_dropout_possibility(
+    dropout_rate: float | None, should_contain_dropout: bool
+) -> None:
     """
     Test the presence of a Dropout layer in the model based on the dropout_rate
     parameter.
