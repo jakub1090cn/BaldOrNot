@@ -1,5 +1,10 @@
 # BaldOrNot
 
+## Sample images
+![Bald]("src\samples\095987.jpg")\
+![Not Bald]("src\samples\096000.jpg")
+
+
 ## Installing Pre-commit Hooks
 
 To ensure code quality and consistency across our project, we use pre-commit hooks that automatically check and format code before commits. Follow the instructions below to set up the pre-commit hooks:
@@ -35,3 +40,4 @@ To ensure code quality and consistency across our project, we use pre-commit hoo
 - **Mypy**: Performs static type checking based on type annotations.
 
 By following these steps, you will ensure that your code is automatically formatted and checked for common errors before being committed, helping maintain high code quality throughout the project.
+
