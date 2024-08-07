@@ -1,5 +1,4 @@
 .idea/
 .venv/
 .mypy_cache/
-src/data.zip
-notebooks/extracted_data
+src/data
