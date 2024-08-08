@@ -5,3 +5,4 @@ DATASET_PATH = os.path.join("..", "src", "data", "list_eval_partition.csv")
 IMAGES_PATH = os.path.join(
     "..", "src", "data", "img_align_celeba", "img_align_celeba"
 )
+BALD_LABELS = {-1: "Not Bald", 1: "Bald"}

@@ -4,10 +4,12 @@ import matplotlib.pyplot as plt
 import cv2
 from typing import List, Dict
 
+from constants import BALD_LABELS
+
 
 def display_sample_images(df: pd.DataFrame, dir_path: str) -> None:
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    labels = {-1: "Not Bald", 1: "Bald"}
+    labels = BALD_LABELS
 
     for i, label in enumerate(labels):
         image = df[df["Bald"] == label]
