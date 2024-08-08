@@ -24,7 +24,7 @@ def check_images(directory: str) -> Tuple[List[str], int, int]:
     return empty_or_corrupted, len(empty_or_corrupted), num_correct
 
 
-def create_sets(path: str) -> None:
+def create_data_subsets(path: str) -> None:
     df = pd.read_csv(path)
     train_df = df[df["image_id"] == 0]
     test_df = df[df["image_id"] == 1]
