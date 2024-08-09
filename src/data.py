@@ -11,12 +11,8 @@ def check_images(directory: str) -> Tuple[List[str], int, int]:
 
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
-        try:
-            img = cv2.imread(file_path)
-
-            if img is None or img.size == 0:
-                empty_or_corrupted.append(filename)
-        except Exception:
+        img = cv2.imread(file_path)
+        if img is None or img.size == 0:
             empty_or_corrupted.append(filename)
         else:
             num_correct += 1
