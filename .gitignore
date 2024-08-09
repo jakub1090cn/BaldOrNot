@@ -1,4 +1,5 @@
 .idea/
 .venv/
 .mypy_cache/
+src/data
 __pycache__/
