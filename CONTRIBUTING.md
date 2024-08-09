@@ -4,12 +4,13 @@
 
 1. [Python Version](#python-version)
 2. [Code Style](#code-style)
-3. [Documentation](#documentation)
-4. [Directory Structure](#directory-structure)
-5. [Testing](#testing)
-6. [Version Control](#version-control)
-7. [Code Reviews](#code-reviews)
-8. [Additional Resources](#additional-resources)
+3. [Installing pre-commit hooks](#installing-pre-commit-hooks)
+4. [Documentation](#documentation)
+5. [Directory Structure](#directory-structure)
+6. [Testing](#testing)
+7. [Version Control](#version-control)
+8. [Code Reviews](#code-reviews)
+9. [Additional Resources](#additional-resources)
 
 ## Python Version
 
@@ -42,6 +43,43 @@ Please follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) guidelines for 
   3. Local application/library-specific imports.
 - **String Quotes**: Use single quotes for strings ('example') except when the string contains a single quote that needs escaping.
 - **Code Formatting**: Use `black` for automatic code formatting to ensure consistency and adherence to PEP 8 guidelines.
+
+## Installing Pre-commit Hooks
+
+To ensure code quality and consistency across our project, we use pre-commit hooks that automatically check and format code before commits. Follow the instructions below to set up the pre-commit hooks:
+
+1. **Install Pre-commit**:
+   Ensure you have `pre-commit` installed. You can install it via pip:
+   ```bash
+   pip install pre-commit
+   ```
+
+2. **Download the Pre-commit Configuration File**:
+   Download the `.pre-commit-config.yaml` file from the root directory of the project repository.
+
+3. **Place the Configuration File**:
+   Ensure the downloaded `.pre-commit-config.yaml` file is placed in the root directory of your local project repository.
+
+4. **Install the Pre-commit Hooks**:
+   Run the following command in the root directory of the project to install the hooks:
+   ```bash
+   pre-commit install
+   ```
+
+5. **Run Pre-commit Hooks Manually (Optional)**:
+   To check all existing files in the repository, you can run the pre-commit hooks manually:
+   ```bash
+   pre-commit run --all-files
+   ```
+
+### Description of Hooks
+
+- **Black**: Automatically formats Python code to adhere to PEP 8 guidelines.
+- **Flake8**: Checks for style errors and potential bugs in Python code.
+- **Mypy**: Performs static type checking based on type annotations.
+
+By following these steps, you will ensure that your code is automatically formatted and checked for common errors before being committed, helping maintain high code quality throughout the project.
+
 
 ## Documentation
 
