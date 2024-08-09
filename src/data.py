@@ -20,12 +20,14 @@ def check_images(directory: str) -> Tuple[List[str], int, int]:
     return empty_or_corrupted, len(empty_or_corrupted), num_correct
 
 
-def create_data_subsets(path: str) -> None:
-    df = pd.read_csv(path)
-    train_df = df[df["image_id"] == 0]
-    test_df = df[df["image_id"] == 1]
+def create_data_subsets(subsets_path: str, labels_path: str) -> None:
+    subsets = pd.read_csv(subsets_path)
+    labels = pd.read_csv(labels_path)
+    df = pd.merge(subsets, labels, how='inner', on='image_id')
+    train_df = df[df["partition"] == 0]
+    test_df = df[df["partition"] == 1].drop(columns=['partition'])
     train_df, val_df = train_test_split(
-        train_df, test_size=0.09, random_state=42
+        train_df.drop(columns=['partition']), test_size=0.09, random_state=42
     )
 
     print("Number of samples in the training set:", len(train_df))
