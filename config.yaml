@@ -1,1 +1,5 @@
 dense_units: 512
+
+data_path: ''
+dataset_path: ''
+images_path: ''
