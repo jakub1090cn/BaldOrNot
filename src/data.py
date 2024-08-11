@@ -6,6 +6,24 @@ import pandas as pd
 
 
 def check_images(directory: str) -> Tuple[List[str], int, int]:
+    """
+    Checks the images in the specified directory to identify empty or corrupted files.
+
+    Args:
+        directory (str): The path to the directory containing the images.
+
+    Returns:
+        Tuple[List[str], int, int]:
+            - A list of filenames that are either empty or corrupted.
+            - The count of empty or corrupted images.
+            - The count of correctly loaded images.
+
+    This function iterates through all the files in the given directory, attempting to load each image using OpenCV's `
+    cv2.imread` function.
+    If an image cannot be loaded (i.e., it is empty or corrupted), it is added to the `empty_or_corrupted` list.
+    The function finally returns this list along with the count of corrupted/empty images and the count of successfully
+    loaded images.
+    """
     empty_or_corrupted: List[str] = []
     num_correct: int = 0
 
@@ -21,6 +39,23 @@ def check_images(directory: str) -> Tuple[List[str], int, int]:
 
 
 def create_data_subsets(subsets_path: str, labels_path: str) -> None:
+    """
+    Creates and saves training, validation, and test datasets based on the provided subsets and labels.
+
+    Args:
+        subsets_path (str): Path to the CSV file containing image IDs and their corresponding partition labels.
+        labels_path (str): Path to the CSV file containing image IDs and their corresponding labels.
+
+    Returns:
+        None: The function does not return any value but saves three CSV files: `train.csv`, `validation.csv`,
+        and `test.csv`.
+
+    This function reads the provided subsets and labels CSV files, merges them based on the `image_id` column,
+    and splits the data into training, validation, and test sets. The partition labels are used to separate
+    the data into training (partition 0) and test (partition 1) sets. The training set is further split
+    into training and validation subsets with 9% of the data allocated to validation. The resulting datasets
+    are saved as CSV files.
+    """
     subsets = pd.read_csv(subsets_path)
     labels = pd.read_csv(labels_path)
     df = pd.merge(subsets, labels, how="inner", on="image_id")
