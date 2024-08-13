@@ -38,27 +38,52 @@ def check_sample_images(directory: str) -> Tuple[List[str], int]:
     return empty_or_corrupted, num_correct
 
 
-def create_data_subsets(subsets_path: str, labels_path: str) -> None:
+def prepare_dataframe(subsets_path: str, labels_path: str) -> pd.DataFrame:
     """
-    Creates and saves training, validation, and test datasets based on the provided subsets and labels.
+     Prepares a combined DataFrame by merging two CSV files on a common column.
 
-    Args:
-        subsets_path (str): Path to the CSV file containing image IDs and their corresponding partition labels.
-        labels_path (str): Path to the CSV file containing image IDs and their corresponding labels.
+     This function reads two CSV files into DataFrames: one containing subsets of data
+     and the other containing labels. It then merges these DataFrames on the "image_id"
+     column using an inner join, which means that only the rows with matching "image_id"
+     values in both DataFrames will be retained in the final result.
 
-    Returns:
-        None: The function does not return any value but saves three CSV files: `train.csv`, `validation.csv`,
-        and `test.csv`.
+     Parameters:
+     subsets_path (str): The file path to the CSV containing the subsets data.
+     labels_path (str): The file path to the CSV containing the labels data.
 
-    This function reads the provided subsets and labels CSV files, merges them based on the `image_id` column,
-    and splits the data into training, validation, and test sets. The partition labels are used to separate
-    the data into training (partition 0) and test (partition 1) sets. The training set is further split
-    into training and validation subsets with 9% of the data allocated to validation. The resulting datasets
-    are saved as CSV files.
-    """
+     Returns:
+     pd.DataFrame: A merged DataFrame containing data from both input CSVs,
+                   joined on the "image_id" column.
+     """
     subsets = pd.read_csv(subsets_path)
     labels = pd.read_csv(labels_path)
-    df = pd.merge(subsets, labels, how="inner", on="image_id")
+    return pd.merge(subsets, labels, how="inner", on="image_id")
+
+
+def create_data_subsets(df: pd.DataFrame) -> None:
+    """
+    Splits the provided DataFrame into training, validation, and test datasets, and saves them as CSV files.
+
+    Args:
+        df (pd.DataFrame): A DataFrame containing the dataset, which includes image IDs, partition labels,
+        and other relevant data.
+
+    Returns:
+        None: This function does not return any value but saves three CSV files: `train.csv`, `validation.csv`,
+        and `test.csv`.
+
+    This function processes the input DataFrame by first filtering the data into training and test sets
+    based on the `partition` column.
+    The training set (where `partition` is 0) is further split into training and validation subsets,
+    with 9% of the data allocated
+    to the validation set. The resulting subsets are then saved as separate CSV files:
+    - `train.csv` for the training data
+    - `validation.csv` for the validation data
+    - `test.csv` for the test data
+
+    The function also prints the number of samples in each of these subsets.
+    """
+
     train_df = df[df["partition"] == 0]
     test_df = df[df["partition"] == 1].drop(columns=["partition"])
     train_df, val_df = train_test_split(
