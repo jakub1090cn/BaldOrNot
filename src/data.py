@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 
 
-def check_images(directory: str) -> Tuple[List[str], int, int]:
+def check_sample_images(directory: str) -> Tuple[List[str], int]:
     """
     Checks the images in the specified directory to identify empty or corrupted files.
 
@@ -35,7 +35,7 @@ def check_images(directory: str) -> Tuple[List[str], int, int]:
         else:
             num_correct += 1
 
-    return empty_or_corrupted, len(empty_or_corrupted), num_correct
+    return empty_or_corrupted, num_correct
 
 
 def create_data_subsets(subsets_path: str, labels_path: str) -> None:
