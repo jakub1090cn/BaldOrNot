@@ -38,7 +38,7 @@ def check_sample_images(directory: str) -> Tuple[List[str], int]:
     return empty_or_corrupted, num_correct
 
 
-def prepare_dataframe(subsets_path: str, labels_path: str) -> pd.DataFrame:
+def prepare_merged_dataframe(subsets_path: str, labels_path: str) -> pd.DataFrame:
     """
      Prepares a combined DataFrame by merging two CSV files on a common column.
 
