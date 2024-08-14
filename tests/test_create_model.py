@@ -39,10 +39,26 @@ def test_model_structure(model: BaldOrNotModel) -> None:
     Asserts:
         bool: True if the model has the correct structure, False otherwise.
     """
-    assert isinstance(model.convnext_tiny, tf.keras.Model)
-    assert isinstance(model.gap, tf.keras.layers.GlobalAveragePooling2D)
-    assert isinstance(model.dense, tf.keras.layers.Dense)
-    assert isinstance(model.predictions, tf.keras.layers.Dense)
+    assert isinstance(model.backbone, tf.keras.Model)
+    assert isinstance(model.classifier, tf.keras.Sequential)
+
+    layers = [layer.__class__.__name__ for layer in model.classifier.layers]
+    expected_layers = [
+        "GlobalAveragePooling2D",
+        "Dense",
+        "Dropout"
+        if any(
+            isinstance(layer, tf.keras.layers.Dropout)
+            for layer in model.classifier.layers
+        )
+        else None,
+        "Dense",
+    ]
+    expected_layers = [layer for layer in expected_layers if layer is not None]
+
+    assert (
+        layers == expected_layers
+    ), f"Expected layers: {expected_layers}, but got: {layers}"
 
 
 @pytest.mark.parametrize("freeze_backbone", [True, False])
@@ -59,9 +75,10 @@ def test_model_trainability(freeze_backbone: bool) -> None:
         False otherwise.
     """
     model = BaldOrNotModel(freeze_backbone=freeze_backbone)
-    assert model.convnext_tiny.trainable is not freeze_backbone
-    assert model.dense.trainable
-    assert model.predictions.trainable
+    assert model.backbone.trainable is not freeze_backbone
+
+    for layer in model.classifier.layers:
+        assert layer.trainable
 
 
 @pytest.mark.parametrize(
@@ -90,12 +107,65 @@ def test_dropout_possibility(
     """
     model = BaldOrNotModel(dropout_rate=dropout_rate)
     model.build(input_shape=(None, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+
     contains_dropout = any(
-        isinstance(layer, tf.keras.layers.Dropout) for layer in model.layers
+        isinstance(layer, tf.keras.layers.Dropout)
+        for layer in model.classifier.layers
     )
     assert contains_dropout == should_contain_dropout, (
         f"Expected Dropout layer presence: {should_contain_dropout}, "
         f"but got: {contains_dropout}"
+    )
+
+
+def test_backbone_output_is_4d_tensor(model: BaldOrNotModel) -> None:
+    """
+    Test if the output of the backbone is a 4D tensor.
+
+    Args:
+        model (BaldOrNotModel): An instance of the BaldOrNotModel class.
+
+    Asserts:
+        bool: True if the backbone output is a 4D tensor, False otherwise.
+    """
+    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+
+    backbone_output = model.backbone(input_tensor)
+
+    num_dim_of_backbone_output = 4
+    is_4d = len(backbone_output.shape) == num_dim_of_backbone_output
+    assert is_4d, (
+        f"Expected backbone output to be a 4D tensor, but got shape: "
+        f"{backbone_output.shape}"
+    )
+
+    assert isinstance(backbone_output, tf.Tensor), (
+        f"Expected backbone output to be of type tf.Tensor, but got type: "
+        f"{type(backbone_output)}"
+    )
+
+
+def test_classifier_input_compatibility(model: BaldOrNotModel) -> None:
+    """
+    Test if the classifier accepts the correct input tensor shape as output
+    by the backbone.
+
+    Args:
+        model (BaldOrNotModel): An instance of the BaldOrNotModel class.
+
+    Asserts:
+        bool: True if the classifier accepts the correct input tensor shape,
+        False otherwise.
+    """
+    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+
+    backbone_output = model.backbone(input_tensor)
+
+    global_avg_pool_output = model.classifier.layers[0](backbone_output)
+
+    assert backbone_output.shape[-1] == global_avg_pool_output.shape[-1], (
+        f"Expected classifier input shape to have {backbone_output.shape[-1]}"
+        f" channels but got {global_avg_pool_output.shape[-1]} channels."
     )
 
 
