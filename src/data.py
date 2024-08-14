@@ -38,23 +38,25 @@ def check_sample_images(directory: str) -> Tuple[List[str], int]:
     return empty_or_corrupted, num_correct
 
 
-def prepare_merged_dataframe(subsets_path: str, labels_path: str) -> pd.DataFrame:
+def prepare_merged_dataframe(
+    subsets_path: str, labels_path: str
+) -> pd.DataFrame:
     """
-     Prepares a combined DataFrame by merging two CSV files on a common column.
+    Prepares a combined DataFrame by merging two CSV files on a common column.
 
-     This function reads two CSV files into DataFrames: one containing subsets of data
-     and the other containing labels. It then merges these DataFrames on the "image_id"
-     column using an inner join, which means that only the rows with matching "image_id"
-     values in both DataFrames will be retained in the final result.
+    This function reads two CSV files into DataFrames: one containing subsets of data
+    and the other containing labels. It then merges these DataFrames on the "image_id"
+    column using an inner join, which means that only the rows with matching "image_id"
+    values in both DataFrames will be retained in the final result.
 
-     Parameters:
-     subsets_path (str): The file path to the CSV containing the subsets data.
-     labels_path (str): The file path to the CSV containing the labels data.
+    Parameters:
+    subsets_path (str): The file path to the CSV containing the subsets data.
+    labels_path (str): The file path to the CSV containing the labels data.
 
-     Returns:
-     pd.DataFrame: A merged DataFrame containing data from both input CSVs,
-                   joined on the "image_id" column.
-     """
+    Returns:
+    pd.DataFrame: A merged DataFrame containing data from both input CSVs,
+                  joined on the "image_id" column.
+    """
     subsets = pd.read_csv(subsets_path)
     labels = pd.read_csv(labels_path)
     return pd.merge(subsets, labels, how="inner", on="image_id")
