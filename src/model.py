@@ -40,6 +40,7 @@ class BaldOrNotModel(tf.keras.Model):
             self.classifier.add(tf.keras.layers.Dropout(dropout_rate))
         self.classifier.add(tf.keras.layers.Dense(1, activation="sigmoid"))
 
+
     def call(self, inputs: tf.Tensor) -> tf.Tensor:
         """
         Forward pass of the model.
@@ -52,5 +53,6 @@ class BaldOrNotModel(tf.keras.Model):
             tf.Tensor: Output tensor with shape (batch_size, 1), containing
             probabilities.
         """
+
         x = self.backbone(inputs)
         return self.classifier(x)

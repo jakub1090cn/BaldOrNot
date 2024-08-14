@@ -39,6 +39,7 @@ def test_model_structure(model: BaldOrNotModel) -> None:
     Asserts:
         bool: True if the model has the correct structure, False otherwise.
     """
+
     assert isinstance(model.backbone, tf.keras.Model)
     assert isinstance(model.classifier, tf.keras.Sequential)
 
@@ -61,6 +62,7 @@ def test_model_structure(model: BaldOrNotModel) -> None:
     ), f"Expected layers: {expected_layers}, but got: {layers}"
 
 
+
 @pytest.mark.parametrize("freeze_backbone", [True, False])
 def test_model_trainability(freeze_backbone: bool) -> None:
     """
@@ -75,10 +77,12 @@ def test_model_trainability(freeze_backbone: bool) -> None:
         False otherwise.
     """
     model = BaldOrNotModel(freeze_backbone=freeze_backbone)
+
     assert model.backbone.trainable is not freeze_backbone
 
     for layer in model.classifier.layers:
         assert layer.trainable
+
 
 
 @pytest.mark.parametrize(
@@ -108,9 +112,11 @@ def test_dropout_possibility(
     model = BaldOrNotModel(dropout_rate=dropout_rate)
     model.build(input_shape=(None, IMG_LEN, IMG_LEN, NUM_CHANNELS))
 
+
     contains_dropout = any(
         isinstance(layer, tf.keras.layers.Dropout)
         for layer in model.classifier.layers
+
     )
     assert contains_dropout == should_contain_dropout, (
         f"Expected Dropout layer presence: {should_contain_dropout}, "
