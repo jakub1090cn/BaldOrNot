@@ -1,9 +1,9 @@
 model_params:
-  dense_units: 512
+  dense_units: 10
   freeze_backbone: true
   dropout_rate: 0.5
 training_params:
-  epochs: 10
+  epochs: 2
   batch_size: 32
   learning_rate: 0.001
   optimizer: adam

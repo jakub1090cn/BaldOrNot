@@ -1,5 +1,4 @@
 import tensorflow as tf
-from src.config_constants import DENSE_UNITS
 from src.constants import IMG_LEN, NUM_CHANNELS
 
 
@@ -22,7 +21,7 @@ class BaldOrNotModel(tf.keras.Model):
     """
 
     def __init__(
-        self, freeze_backbone: bool = True, dropout_rate: float | None = None
+            self, dense_units: int, freeze_backbone: bool, dropout_rate: float | None
     ):
         super().__init__()
         self.backbone: tf.keras.Model = tf.keras.applications.ConvNeXtTiny(
@@ -34,12 +33,11 @@ class BaldOrNotModel(tf.keras.Model):
         self.classifier: tf.keras.Sequential = tf.keras.Sequential()
         self.classifier.add(tf.keras.layers.GlobalAveragePooling2D())
         self.classifier.add(
-            tf.keras.layers.Dense(DENSE_UNITS, activation="relu")
+            tf.keras.layers.Dense(dense_units, activation="relu")
         )
         if dropout_rate is not None:
             self.classifier.add(tf.keras.layers.Dropout(dropout_rate))
         self.classifier.add(tf.keras.layers.Dense(1, activation="sigmoid"))
-
 
     def call(self, inputs: tf.Tensor) -> tf.Tensor:
         """
