@@ -7,8 +7,8 @@ or not, based on the features extracted from their images.\
 ![BaldOrNot](src/samples/BALD4.jpg)
 
 ## Sample images
-![Bald]("src/samples/095987.jpg")\
-![Not Bald]("src/samples/096000.jpg")
+![Bald](src/samples/095987.jpg)\
+![Not Bald](src/samples/096000.jpg)
 
 
 ## CelebFaces
