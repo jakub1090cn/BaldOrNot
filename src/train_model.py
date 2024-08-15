@@ -14,3 +14,31 @@ def load_data_from_csv(csv_path: str, images_dir: str):
     return data_paths, labels
 
 
+def train_model(model_config: dict):
+    data_paths_train, labels_train = load_data_from_csv(
+        model_config['paths']['train_path'],
+        model_config['images_dir']
+    )
+
+    data_paths_val, labels_val = load_data_from_csv(
+        model_config['paths']['val_path'],
+        model_config['images_dir']
+    )
+
+    train_generator = BoldDataset(
+        data_paths=data_paths_train,
+        labels=labels_train,
+        batch_size=model_config['training_params']['batch_size'],
+        input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS),
+        shuffle=True
+    )
+
+    val_generator = BoldDataset(
+        data_paths=data_paths_val,
+        labels=labels_val,
+        batch_size=model_config['training_params']['batch_size'],
+        input_shape=(IMG_LEN, IMG_LEN, NUM_CHANNELS),
+        shuffle=False
+    )
+
+
