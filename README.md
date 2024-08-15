@@ -4,7 +4,7 @@ This project focuses on the binary classification of individuals as either bald 
 [CelebFaces Attributes](https://www.kaggle.com/datasets/jessicali9530/celeba-dataset?resource=download)
 The objective is to develop a machine learning model using TensorFlow that accurately predicts whether a person is bald
 or not, based on the features extracted from their images.\
-![BaldOrNot]("src/samples/BALD4.jpg")
+![BaldOrNot](src/samples/BALD4.jpg)
 
 ## Sample images
 ![Bald]("src/samples/095987.jpg")\
