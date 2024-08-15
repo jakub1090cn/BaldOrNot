@@ -1,0 +1,22 @@
+model_params:
+  freeze_backbone: true
+  dropout_rate: 0.5
+
+training_params:
+  epochs: 10
+  batch_size: 32
+  learning_rate: 0.001
+  validation_split: 0.2
+  optimizer: "adam"
+  loss_function: "binary_crossentropy"
+  metrics:
+    - "accuracy"
+  callbacks:
+    - type: "EarlyStopping"
+      monitor: "val_loss"
+      patience: 5
+
+paths:
+  train_path: ''
+  val_path: ''
+  images_dir: ''
