@@ -1,4 +1,6 @@
 import pandas as pd
+import pytest
+
 from src.data import check_sample_images, prepare_merged_dataframe
 
 
@@ -73,6 +75,7 @@ def test_prepare_merged_dataframe(mocker):
     result_df = prepare_merged_dataframe(subsets_path, labels_path)
 
     pd.testing.assert_frame_equal(result_df, expected_df)
+
 
 if __name__ == "__main__":
     pytest.main()
