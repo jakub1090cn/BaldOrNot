@@ -4,17 +4,6 @@ from src.model import BaldOrNotModel
 from src.constants import IMG_LEN, NUM_CHANNELS
 
 
-@pytest.fixture
-def model() -> BaldOrNotModel:
-    """
-    Fixture to create an instance of the BaldOrNotModel.
-
-    Returns:
-        BaldOrNotModel: An instance of the BaldOrNotModel class.
-    """
-    return BaldOrNotModel()
-
-
 def test_model_compile(model: BaldOrNotModel) -> None:
     """
     Test to ensure the model can be compiled without errors.
@@ -56,15 +45,15 @@ def test_model_prediction_shape(model: BaldOrNotModel) -> None:
         predictions = model.predict(fake_data)
     except Exception as e:
         pytest.fail(f"Model prediction failed: {e}")
-
-    expected_output_shape = (num_images, 1)
-    assert predictions.shape == expected_output_shape, (
-        f"Expected output shape {expected_output_shape}, "
-        f"but got {predictions.shape}"
-    )
-    assert (predictions >= 0).all() and (
-        predictions <= 1
-    ).all(), f"Predictions should be in range [0, 1], but got {predictions}"
+    else:
+        expected_output_shape = (num_images, 1)
+        assert predictions.shape == expected_output_shape, (
+            f"Expected output shape {expected_output_shape}, "
+            f"but got {predictions.shape}"
+        )
+        assert (predictions >= 0).all() and (
+                predictions <= 1
+        ).all(), f"Predictions should be in range [0, 1], but got {predictions}"
 
 
 if __name__ == "__main__":

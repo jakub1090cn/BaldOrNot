@@ -48,3 +48,9 @@ class BoldOrNotConfig:
     metrics: List[str] = field(default_factory=lambda: ["accuracy"])
     paths: Paths = field(default_factory=lambda: Paths())
 
+    def __post_init__(self):
+        self.model_params = ModelParams(**self.model_params) if isinstance(self.model_params, dict) else self.model_params
+        self.training_params = TrainingParams(**self.training_params) if isinstance(self.training_params, dict) else self.training_params
+        # self.callbacks = [Callback(**params) for params in self.callbacks]
+        self.paths = Paths(**self.paths) if isinstance(self.paths, dict) else self.paths
+

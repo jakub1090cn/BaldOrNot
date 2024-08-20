@@ -2,30 +2,10 @@ from dataclasses import asdict
 
 import pytest
 import tensorflow as tf
-import yaml
 
 from src.config import BoldOrNotConfig, ModelParams
 from src.model import BaldOrNotModel
 from src.constants import IMG_LEN, NUM_CHANNELS
-
-
-@pytest.fixture
-def test_config() -> BoldOrNotConfig:
-    config_path = "test_config.yaml"
-    with open(config_path, "r") as file:
-        config_data = yaml.safe_load(file)
-    return BoldOrNotConfig(**config_data)
-
-
-@pytest.fixture
-def model(test_config) -> BaldOrNotModel:
-    """
-    Fixture for creating an instance of the BaldOrNotModel.
-
-    Returns:
-        BaldOrNotModel: An instance of the BaldOrNotModel class.
-    """
-    return BaldOrNotModel(**test_config.model_params)
 
 
 def test_model_creation(model: BaldOrNotModel) -> None:
@@ -90,7 +70,7 @@ def test_model_trainability(freeze_backbone: bool, test_config) -> None:
     """
     args: ModelParams = test_config.model_params
     args.freeze_backbone = freeze_backbone
-    model = BaldOrNotModel(**args)
+    model = BaldOrNotModel(**asdict(args))
 
     assert model.backbone.trainable is not freeze_backbone
 
@@ -105,9 +85,9 @@ def test_model_trainability(freeze_backbone: bool, test_config) -> None:
         (0.5, True),
     ],
 )
-def test_dropout_possibility(
-        dropout_rate: float | None, should_contain_dropout: bool
-) -> None:
+def test_dropout_possibility(test_config: BoldOrNotConfig,
+                             dropout_rate: float | None, should_contain_dropout: bool
+                             ) -> None:
     """
     Test the presence of a Dropout layer in the model based on the dropout_rate
     parameter.
@@ -122,7 +102,9 @@ def test_dropout_possibility(
         bool: True if the model contains a Dropout layer when expected,
         False otherwise.
     """
-    model = BaldOrNotModel(dropout_rate=dropout_rate)
+    args: ModelParams = test_config.model_params
+    args.dropout_rate = dropout_rate
+    model = BaldOrNotModel(**asdict(args))
     model.build(input_shape=(None, IMG_LEN, IMG_LEN, NUM_CHANNELS))
 
     contains_dropout = any(
