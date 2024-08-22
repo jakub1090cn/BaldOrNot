@@ -3,16 +3,16 @@ from dataclasses import asdict
 import pytest
 import yaml
 
-from src.config import BoldOrNotConfig
+from src.config import BaldOrNotConfig
 from src.model import BaldOrNotModel
 
 
 @pytest.fixture
-def test_config() -> BoldOrNotConfig:
+def test_config() -> BaldOrNotConfig:
     config_path = "test_config.yaml"
     with open(config_path, "r") as file:
         config_data = yaml.safe_load(file)
-    return BoldOrNotConfig(**config_data)
+    return BaldOrNotConfig(**config_data)
 
 
 @pytest.fixture

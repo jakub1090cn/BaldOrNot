@@ -3,7 +3,7 @@ from dataclasses import asdict
 import pytest
 import tensorflow as tf
 
-from src.config import BoldOrNotConfig, ModelParams
+from src.config import BaldOrNotConfig, ModelParams
 from src.model import BaldOrNotModel
 from src.constants import IMG_LEN, NUM_CHANNELS
 
@@ -51,7 +51,7 @@ def test_model_structure(model: BaldOrNotModel) -> None:
     expected_layers = [layer for layer in expected_layers if layer is not None]
 
     assert (
-            layers == expected_layers
+        layers == expected_layers
     ), f"Expected layers: {expected_layers}, but got: {layers}"
 
 
@@ -85,9 +85,11 @@ def test_model_trainability(freeze_backbone: bool, test_config) -> None:
         (0.5, True),
     ],
 )
-def test_dropout_possibility(test_config: BoldOrNotConfig,
-                             dropout_rate: float | None, should_contain_dropout: bool
-                             ) -> None:
+def test_dropout_possibility(
+    test_config: BaldOrNotConfig,
+    dropout_rate: float | None,
+    should_contain_dropout: bool,
+) -> None:
     """
     Test the presence of a Dropout layer in the model based on the dropout_rate
     parameter.
@@ -110,7 +112,6 @@ def test_dropout_possibility(test_config: BoldOrNotConfig,
     contains_dropout = any(
         isinstance(layer, tf.keras.layers.Dropout)
         for layer in model.classifier.layers
-
     )
     assert contains_dropout == should_contain_dropout, (
         f"Expected Dropout layer presence: {should_contain_dropout}, "

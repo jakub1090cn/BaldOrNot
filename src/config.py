@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict
 
+
 @dataclass
 class ModelParams:
     dense_units: int = 512
@@ -29,28 +30,40 @@ class Callback:
 
 @dataclass
 class Paths:
-    train_path: str = ''
-    val_path: str = ''
-    images_dir: str = ''
+    train_path: str = ""
+    val_path: str = ""
+    images_dir: str = ""
 
 
 @dataclass
-class BoldOrNotConfig:
+class BaldOrNotConfig:
     model_params: ModelParams = field(default_factory=lambda: ModelParams())
-    training_params: TrainingParams = field(default_factory=lambda: TrainingParams())
-    callbacks: List[Dict[str, any]] = field(default_factory=lambda: [
-        Callback(type="EarlyStopping",
-                 args={
-                        "monitor": "val_loss",
-                        "patience": 5
-                    }).to_dict()
-    ])
+    training_params: TrainingParams = field(
+        default_factory=lambda: TrainingParams()
+    )
+    callbacks: List[Dict[str, any]] = field(
+        default_factory=lambda: [
+            Callback(
+                type="EarlyStopping",
+                args={"monitor": "val_loss", "patience": 5},
+            ).to_dict()
+        ]
+    )
     metrics: List[str] = field(default_factory=lambda: ["accuracy"])
     paths: Paths = field(default_factory=lambda: Paths())
 
     def __post_init__(self):
-        self.model_params = ModelParams(**self.model_params) if isinstance(self.model_params, dict) else self.model_params
-        self.training_params = TrainingParams(**self.training_params) if isinstance(self.training_params, dict) else self.training_params
+        self.model_params = (
+            ModelParams(**self.model_params)
+            if isinstance(self.model_params, dict)
+            else self.model_params
+        )
+        self.training_params = (
+            TrainingParams(**self.training_params)
+            if isinstance(self.training_params, dict)
+            else self.training_params
+        )
         # self.callbacks = [Callback(**params) for params in self.callbacks]
-        self.paths = Paths(**self.paths) if isinstance(self.paths, dict) else self.paths
-
+        self.paths = (
+            Paths(**self.paths) if isinstance(self.paths, dict) else self.paths
+        )
