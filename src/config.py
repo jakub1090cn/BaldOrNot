@@ -32,7 +32,16 @@ class Callback:
 class Paths:
     train_path: str = ""
     val_path: str = ""
-    images_dir: str = ""
+    images_dir: str = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\"
+        "img_align_celeba\\img_align_celeba"
+    )
+    labels_path: str = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\list_attr_celeba.csv"
+    )
+    partition_path: str = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\list_eval_partition.csv"
+    )
 
 
 @dataclass
