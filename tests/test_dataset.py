@@ -1,10 +1,9 @@
 import pytest
 import pandas as pd
 import numpy as np
-import os
 from unittest.mock import patch
 
-from src.config import BaldOrNotConfig, Paths
+from src.config import BaldOrNotConfig
 from src.data import BaldDataset
 
 
@@ -153,20 +152,21 @@ def test_on_epoch_end(sample_df, shuffle):
         assert np.array_equal(dataset.indexes, initial_indexes)
 
 
-@patch.object(Paths, "images_dir", new="src/samples")  # mock problem
-def test_data_generation_initializes_matrices_correctly(sample_df):
-    images_dir = BaldOrNotConfig().paths.images_dir
-    print(f"Images directory: {images_dir}")
-    print(f"Files in directory: {os.listdir(images_dir)}")
-    dataset = BaldDataset(sample_df, batch_size=2)
-    X, y = dataset._BaldDataset__data_generation(["bald.jpg", "not_bald.jpg"])
+def test_data_generation_initializes_matrices_correctly(sample_df):  # problem
+    config_instance = BaldOrNotConfig()
 
-    # Test if X and y have the correct shapes
-    assert X.shape == (2, 178, 218, 3), "X matrix has incorrect shape."
-    assert y.shape == (2,), "y matrix has incorrect shape."
+    with patch.object(config_instance.paths, "images_dir", new="src/samples"):
+        with patch(
+            "src.data.BaldOrNotConfig", return_value=config_instance
+        ):  # E501
+            dataset = BaldDataset(sample_df, batch_size=2)
+            X, y = dataset._BaldDataset__data_generation(
+                ["bald.jpg", "not_bald.jpg"]
+            )
 
-    # Test if y contains integers
-    assert y.dtype == int, "y should contain integers."
+            assert X.shape == (2, 178, 218, 3), "X matrix has incorrect shape."
+            assert y.shape == (2,), "y matrix has incorrect shape."
+            assert y.dtype == int, "y should contain integers."
 
 
 # here two more __data_generation tests: for imgs transforming and result
