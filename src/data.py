@@ -6,6 +6,12 @@ import pandas as pd
 from typing import List, Tuple
 from sklearn.model_selection import train_test_split
 from src.config import BaldOrNotConfig
+from src.constants import (
+    N_CHANNELS_RGB,
+    N_CHANNELS_GRAYSCALE,
+    DEFAULT_IMG_SIZE,
+)
+from src.exceptions import BaldOrNotDataError
 
 
 class BaldDataset(keras.utils.Sequence):
@@ -25,8 +31,9 @@ class BaldDataset(keras.utils.Sequence):
         The number of samples per batch.
     dim : Tuple[int, int]
         The dimensions to which all images will be resized (height, width).
-    n_channels : int
-        The number of channels in the images (e.g., 3 for RGB).
+    n_channels : int, optional
+    Number of channels in the images. Must be either 1 for grayscale or 3 for
+    RGB images (default is 3).
     n_classes : int
         The number of classes (used for one-hot encoding of labels).
     shuffle : bool
@@ -55,9 +62,8 @@ class BaldDataset(keras.utils.Sequence):
         self,
         df: pd.DataFrame,
         batch_size: int = 32,
-        dim: Tuple[int, int] = (218, 178),
-        n_channels: int = 3,
-        n_classes: int = 2,
+        dim: Tuple[int, int] = DEFAULT_IMG_SIZE,
+        n_channels: int = N_CHANNELS_RGB,
         shuffle: bool = True,
     ):
         """
@@ -80,14 +86,19 @@ class BaldDataset(keras.utils.Sequence):
             (default is True).
         """
         super().__init__()
+        if n_channels not in [N_CHANNELS_GRAYSCALE, N_CHANNELS_RGB]:
+            raise ValueError(
+                "n_channels must be either 1 (grayscale) or 3 (RGB)."
+            )
+
         self.dim = dim
         self.batch_size = batch_size
         self.df = df
         self.labels = df["labels"]
         self.list_IDs = df["image_id"]
         self.n_channels = n_channels
-        self.n_classes = n_classes
         self.shuffle = shuffle
+        self.config = BaldOrNotConfig()
         self.on_epoch_end()
 
     def __len__(self) -> int:
@@ -121,7 +132,7 @@ class BaldDataset(keras.utils.Sequence):
 
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
 
-        X, y = self.__data_generation(list_IDs_temp)
+        X, y = self.__data_preprocessing(list_IDs_temp)
 
         return X, y
 
@@ -136,7 +147,7 @@ class BaldDataset(keras.utils.Sequence):
         if self.shuffle:
             np.random.shuffle(self.indexes)
 
-    def __data_generation(
+    def __data_preprocessing(
         self, list_IDs_temp: List[str]
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -152,23 +163,28 @@ class BaldDataset(keras.utils.Sequence):
         Tuple[np.ndarray, np.ndarray]
             A batch of images and their corresponding labels.
         """
-        X = np.empty(
-            (self.batch_size, self.dim[1], self.dim[0], self.n_channels)
-        )
+        X = np.empty((self.batch_size, *self.dim, self.n_channels))
         y = np.empty((self.batch_size), dtype=int)
 
         for i, ID in enumerate(list_IDs_temp):
-            images_dir = BaldOrNotConfig().paths.images_dir
+            images_dir = self.config.paths.images_dir
             image_path = os.path.join(images_dir, ID)
             image = cv2.imread(image_path)
 
-            image = cv2.resize(image, self.dim)
+            if image is None:
+                raise BaldOrNotDataError(f"Failed to load image: {image_path}")
+
+            image = cv2.resize(image, self.dim[::-1])
+            # avoiding ValueError by adjusting self.dim order
 
             # If grayscale, convert it to RGB
-            if image.shape[-1] == 1:
+            if (
+                image.shape[-1] == N_CHANNELS_GRAYSCALE
+                and self.n_channels == N_CHANNELS_RGB  # noqa: W503
+            ):
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-            X[i,] = image / 255.0  # Normalize to range [0, 1]
+            X[i] = image / 255.0  # Normalize to range [0, 1]
             y[i] = self.df.loc[self.df["image_id"] == ID, "labels"].values[0]
 
         return X, y
@@ -258,7 +274,7 @@ class BaldDataset(keras.utils.Sequence):
         )
 
     @staticmethod
-    def create_subset_dfs(
+    def create_subset_dfs(  # problem
         df: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
@@ -278,7 +294,7 @@ class BaldDataset(keras.utils.Sequence):
         Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
             Three DataFrames: train_df, val_df, and test_df.
         """
-        train_encoding = 0  # to be moved to config
+        train_encoding = 0
         test_encoding = 1
         train_df = df[df["partition"] == train_encoding]
         test_df = df[df["partition"] == test_encoding].drop(
