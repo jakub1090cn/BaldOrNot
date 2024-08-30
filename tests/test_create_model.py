@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from src.config import BaldOrNotConfig, ModelParams
 from src.model import BaldOrNotModel
-from src.constants import IMG_LEN, NUM_CHANNELS
+from src.constants import IMG_LEN, N_CHANNELS_RGB
 
 
 def test_model_creation(model: BaldOrNotModel) -> None:
@@ -107,7 +107,7 @@ def test_dropout_possibility(
     args: ModelParams = test_config.model_params
     args.dropout_rate = dropout_rate
     model = BaldOrNotModel(**asdict(args))
-    model.build(input_shape=(None, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+    model.build(input_shape=(None, IMG_LEN, IMG_LEN, N_CHANNELS_RGB))
 
     contains_dropout = any(
         isinstance(layer, tf.keras.layers.Dropout)
@@ -129,7 +129,7 @@ def test_backbone_output_is_4d_tensor(model: BaldOrNotModel) -> None:
     Asserts:
         bool: True if the backbone output is a 4D tensor, False otherwise.
     """
-    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, N_CHANNELS_RGB))
 
     backbone_output = model.backbone(input_tensor)
 
@@ -158,7 +158,7 @@ def test_classifier_input_compatibility(model: BaldOrNotModel) -> None:
         bool: True if the classifier accepts the correct input tensor shape,
         False otherwise.
     """
-    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, NUM_CHANNELS))
+    input_tensor = tf.random.uniform((1, IMG_LEN, IMG_LEN, N_CHANNELS_RGB))
 
     backbone_output = model.backbone(input_tensor)
 

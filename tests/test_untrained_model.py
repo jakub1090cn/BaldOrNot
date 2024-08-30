@@ -1,7 +1,7 @@
 import pytest
 import tensorflow as tf
 from src.model import BaldOrNotModel
-from src.constants import IMG_LEN, NUM_CHANNELS
+from src.constants import IMG_LEN, N_CHANNELS_RGB
 
 
 def test_model_compile(model: BaldOrNotModel) -> None:
@@ -36,7 +36,7 @@ def test_model_prediction_shape(model: BaldOrNotModel) -> None:
     """
     num_images = 3
     fake_data = tf.random.normal(
-        shape=(num_images, IMG_LEN, IMG_LEN, NUM_CHANNELS)
+        shape=(num_images, IMG_LEN, IMG_LEN, N_CHANNELS_RGB)
     )
     model.compile(
         optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"]
@@ -52,8 +52,10 @@ def test_model_prediction_shape(model: BaldOrNotModel) -> None:
             f"but got {predictions.shape}"
         )
         assert (predictions >= 0).all() and (
-                predictions <= 1
-        ).all(), f"Predictions should be in range [0, 1], but got {predictions}"
+            predictions <= 1
+        ).all(), (
+            f"Predictions should be in range [0, 1], but got {predictions}"
+        )
 
 
 if __name__ == "__main__":
