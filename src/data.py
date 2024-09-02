@@ -94,7 +94,6 @@ class BaldDataset(keras.utils.Sequence):
         self.dim = dim
         self.batch_size = batch_size
         self.df = df
-        self.labels = df["labels"]
         self.list_IDs = df["image_id"]
         self.n_channels = n_channels
         self.shuffle = shuffle
