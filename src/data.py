@@ -166,8 +166,9 @@ class BaldDataset(keras.utils.Sequence):
         X = np.empty((self.batch_size, *self.dim, self.n_channels))
         y = np.empty((self.batch_size), dtype=int)
 
+        images_dir = self.config.paths.images_dir
+
         for i, ID in enumerate(list_IDs_temp):
-            images_dir = self.config.paths.images_dir
             image_path = os.path.join(images_dir, ID)
             image = cv2.imread(image_path)
 
