@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from unittest.mock import patch
 
-from src.config import BaldOrNotConfig
 from src.data import BaldDataset
 from src.constants import (
     N_CHANNELS_RGB,
@@ -23,17 +22,8 @@ def sample_df():
 
 
 @pytest.fixture
-def config():
-    config = BaldOrNotConfig()
-    config.paths.images_dir = "src//samples"
-    return config
-
-
-@pytest.fixture
 def dataset(sample_df):
-    dataset = BaldDataset(sample_df, batch_size=1, shuffle=False)
-    dataset.config.paths.images_dir = "src//samples"
-    return dataset
+    return BaldDataset(sample_df, batch_size=1, shuffle=False)
 
 
 def test_init(sample_df):
