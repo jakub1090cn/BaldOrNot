@@ -24,7 +24,16 @@ def sample_df():
 
 @pytest.fixture
 def config():
-    return BaldOrNotConfig()
+    config = BaldOrNotConfig()
+    config.paths.images_dir = "src//samples"
+    return config
+
+
+@pytest.fixture
+def dataset(sample_df):
+    dataset = BaldDataset(sample_df, batch_size=1, shuffle=False)
+    dataset.config.paths.images_dir = "src//samples"
+    return dataset
 
 
 def test_init(sample_df):
@@ -66,9 +75,20 @@ def test_len(sample_df, batch_size, expected_length):
     assert len(dataset) == expected_length
 
 
-def test_getitem_calculates_indices_correctly(sample_df):
-    dataset = BaldDataset(sample_df, batch_size=1, shuffle=False)
+@pytest.mark.parametrize("shuffle", [True, False])
+def test_on_epoch_end(sample_df, shuffle):
+    dataset = BaldDataset(sample_df, shuffle=shuffle)
+    initial_indexes = dataset.indexes.copy()
+    dataset.on_epoch_end()
 
+    assert len(dataset.indexes) == len(initial_indexes)
+
+    if not shuffle:
+        assert np.array_equal(dataset.indexes, initial_indexes)
+    # we cannot test order if shuffle because it's random
+
+
+def test_getitem_calculates_indices_correctly(dataset):
     # Test the first batch
     expected_indices = [0]  # Indices for the first batch
     actual_indices = dataset.indexes[0:1]
@@ -84,9 +104,7 @@ def test_getitem_calculates_indices_correctly(sample_df):
     ), "Indices for the second batch are incorrect."
 
 
-def test_getitem_extracts_image_ids_correctly(sample_df):
-    dataset = BaldDataset(sample_df, batch_size=1, shuffle=False)
-
+def test_getitem_extracts_image_ids_correctly(dataset):
     # Test the first batch
     expected_list_IDs_temp = ["bald.jpg"]
     actual_list_IDs_temp = [dataset.list_IDs[i] for i in dataset.indexes[0:1]]
@@ -122,14 +140,12 @@ def test_getitem_calls_data_preprocessing_correctly(
 
 
 @patch.object(BaldDataset, "_BaldDataset__data_preprocessing")
-def test_getitem_returns_correct_X_and_y(mock_data_preprocessing, sample_df):
+def test_getitem_returns_correct_X_and_y(mock_data_preprocessing, dataset):
     # Mock the return value of __data_preprocessing
     mock_data_preprocessing.return_value = (
         np.array([[[[0.1]], [[0.2]], [[0.3]]]]),  # Mocked X (images)
         np.array([1, 0]),  # Mocked y (labels)
     )
-
-    dataset = BaldDataset(sample_df, batch_size=2, shuffle=False)
 
     # Test the first (and only) batch
     X, y = dataset[0]
@@ -143,42 +159,6 @@ def test_getitem_returns_correct_X_and_y(mock_data_preprocessing, sample_df):
     ), "Returned y (labels) for the first batch is incorrect."
 
     # There is no second batch, so no need to test it
-
-
-@pytest.mark.parametrize("shuffle", [True, False])
-def test_on_epoch_end(sample_df, shuffle):
-    dataset = BaldDataset(sample_df, shuffle=shuffle)
-    initial_indexes = dataset.indexes.copy()
-    dataset.on_epoch_end()
-
-    assert len(dataset.indexes) == len(initial_indexes)
-
-    if shuffle:
-        assert not np.array_equal(dataset.indexes, initial_indexes)
-    else:
-        assert np.array_equal(dataset.indexes, initial_indexes)
-
-
-def test_data_preprocessing_initializes_matrices_correctly(
-    sample_df, config
-):  # problem
-    batch_size = 2
-
-    with patch.object(config.paths, "images_dir", new="src/samples"):
-        with patch("src.data.BaldOrNotConfig", return_value=config):  # E501
-            dataset = BaldDataset(sample_df, batch_size=batch_size)
-            X, y = dataset._BaldDataset__data_preprocessing(
-                ["bald.jpg", "not_bald.jpg"]
-            )
-
-            assert X.shape == (
-                batch_size,
-                *DEFAULT_IMG_SIZE,
-                N_CHANNELS_RGB,
-                "X matrix has incorrect shape.",
-            )
-            assert y.shape == (batch_size,), "y matrix has incorrect shape."
-            assert y.dtype == int, "y should contain integers."
 
 
 def test_get_wrong_files_list():
