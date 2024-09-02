@@ -13,6 +13,9 @@ from src.constants import (
 
 @pytest.fixture
 def sample_df():
+    """
+    Fixture that provides a sample DataFrame to use for testing.
+    """
     data = {
         "image_id": ["bald.jpg", "not_bald.jpg"],
         "labels": [1, 0],
@@ -23,10 +26,17 @@ def sample_df():
 
 @pytest.fixture
 def dataset(sample_df):
+    """
+    Fixture that initializes the BaldDataset class with the sample DataFrame.
+    """
     return BaldDataset(sample_df, batch_size=1, shuffle=False)
 
 
 def test_init(sample_df):
+    """
+    Test the initialization of the BaldDataset class to ensure default
+    parameters are set correctly.
+    """
     dataset = BaldDataset(sample_df)
     assert dataset.batch_size == 32
     assert dataset.dim == DEFAULT_IMG_SIZE
@@ -39,16 +49,21 @@ def test_init(sample_df):
     "n_channels, expected", [(N_CHANNELS_RGB, 3), (N_CHANNELS_GRAYSCALE, 1)]
 )
 def test_n_channels_accepts_valid_values(sample_df, n_channels, expected):
+    """
+    Test that valid values for n_channels are accepted by the
+    BaldDataset class.
+    """
     dataset = BaldDataset(sample_df, n_channels=n_channels)
     assert dataset.n_channels == expected, f"n_channels should be {expected}."
 
 
 def test_n_channels_rejects_invalid_value(sample_df):
-    # Test with an invalid n_channels value
+    """
+    Test that invalid values for n_channels raise a ValueError.
+    """
     with pytest.raises(
         ValueError,
-        match="n_channels must be either 1 \("  # noqa: W605
-        "grayscale\) or 3 \(RGB\)\.",  # noqa: W605
+        match="n_channels must be either 1 \(grayscale\) or 3 \(RGB\)\.",  # noqa: W605, E501
     ):
         BaldDataset(sample_df, n_channels=2)
 
@@ -61,12 +76,20 @@ def test_n_channels_rejects_invalid_value(sample_df):
     ],
 )
 def test_len(sample_df, batch_size, expected_length):
+    """
+    Test that the __len__ method returns the correct number of batches
+    based on batch_size.
+    """
     dataset = BaldDataset(sample_df, batch_size=batch_size)
     assert len(dataset) == expected_length
 
 
 @pytest.mark.parametrize("shuffle", [True, False])
 def test_on_epoch_end(sample_df, shuffle):
+    """
+    Test the on_epoch_end method to ensure indexes are shuffled correctly
+    when shuffle is True, and remain the same when shuffle is False.
+    """
     dataset = BaldDataset(sample_df, shuffle=shuffle)
     initial_indexes = dataset.indexes.copy()
     dataset.on_epoch_end()
@@ -79,6 +102,10 @@ def test_on_epoch_end(sample_df, shuffle):
 
 
 def test_getitem_calculates_indices_correctly(dataset):
+    """
+    Test that the __getitem__ method correctly calculates indices for
+    each batch.
+    """
     # Test the first batch
     expected_indices = [0]  # Indices for the first batch
     actual_indices = dataset.indexes[0:1]
@@ -95,6 +122,10 @@ def test_getitem_calculates_indices_correctly(dataset):
 
 
 def test_getitem_extracts_image_ids_correctly(dataset):
+    """
+    Test that the __getitem__ method extracts the correct image IDs for
+    each batch.
+    """
     # Test the first batch
     expected_list_IDs_temp = ["bald.jpg"]
     actual_list_IDs_temp = [dataset.list_IDs[i] for i in dataset.indexes[0:1]]
@@ -114,6 +145,10 @@ def test_getitem_extracts_image_ids_correctly(dataset):
 def test_getitem_calls_data_preprocessing_correctly(
     mock_data_preprocessing, sample_df
 ):
+    """
+    Test that the __getitem__ method calls the __data_preprocessing method
+    correctly with the right image IDs.
+    """
     mock_data_preprocessing.return_value = (
         np.zeros((2, *DEFAULT_IMG_SIZE, 3)),  # Mocked X (images)
         np.array([1, 0]),  # Mocked y (labels)
@@ -131,6 +166,10 @@ def test_getitem_calls_data_preprocessing_correctly(
 
 @patch.object(BaldDataset, "_BaldDataset__data_preprocessing")
 def test_getitem_returns_correct_X_and_y(mock_data_preprocessing, dataset):
+    """
+    Test that the __getitem__ method returns the correct X (images) and
+    y (labels) for each batch.
+    """
     # Mock the return value of __data_preprocessing
     mock_data_preprocessing.return_value = (
         np.array([[[[0.1]], [[0.2]], [[0.3]]]]),  # Mocked X (images)
@@ -152,6 +191,10 @@ def test_getitem_returns_correct_X_and_y(mock_data_preprocessing, dataset):
 
 
 def test_get_wrong_files_list():
+    """
+    Test the __get_wrong_files_list method to ensure it correctly identifies
+    files that cannot be read as images.
+    """
     with patch("os.listdir", return_value=["bald.jpg", "not_bald.jpg"]):
         with patch(
             "cv2.imread", side_effect=[None, np.ones((300, 300, 3))]
@@ -164,6 +207,10 @@ def test_get_wrong_files_list():
 
 
 def test_get_cleaned_df(sample_df):
+    """
+    Test the get_cleaned_df method to ensure it correctly removes rows
+    corresponding to images that cannot be read.
+    """
     with patch(
         "src.data.BaldDataset._BaldDataset__get_wrong_files_list",
         return_value=["not_bald.jpg"],
@@ -176,6 +223,10 @@ def test_get_cleaned_df(sample_df):
 
 
 def test_prepare_merged_dataframe(tmpdir):
+    """
+    Test the prepare_merged_dataframe method to ensure it merges two CSV files
+    into a single DataFrame with the correct columns.
+    """
     subsets_path = tmpdir.join("subsets.csv")
     labels_path = tmpdir.join("labels.csv")
 
@@ -191,9 +242,9 @@ def test_prepare_merged_dataframe(tmpdir):
 
     df_merged = BaldDataset.prepare_merged_dataframe(subsets_path, labels_path)
 
-    assert isinstance(df_merged, pd.DataFrame), (
-        "The result should be a " "DataFrame."
-    )
+    assert isinstance(
+        df_merged, pd.DataFrame
+    ), "The result should be a DataFrame."
     assert list(df_merged.columns) == ["image_id", "partition", "labels"], (
         "The DataFrame should contain only the columns: 'image_id', "
         "'partition', and 'labels'."
@@ -202,6 +253,10 @@ def test_prepare_merged_dataframe(tmpdir):
 
 
 def test_create_subset_dfs(sample_df):
+    """
+    Test the create_subset_dfs method to ensure it correctly creates
+    training, validation, and test subsets from the DataFrame.
+    """
     extra_data = pd.DataFrame(
         {
             "image_id": ["new_sample.jpg"],
