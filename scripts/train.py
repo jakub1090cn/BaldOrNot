@@ -36,18 +36,20 @@ def run_experiment(config: BaldOrNotConfig):
 
     logging.info(
         "Model training completed. History of training:\n"
-        f"{json.dumps(history, indent=4)}"
+        f"{json.dumps(history.history, indent=4)}"
     )
 
     logging.info("Plotting metric curve for loss...")
     plot_metric_curve(
-        history=history, metric="loss", output_dir_path=output_dir_path
+        history=history, metric_name="loss", output_dir_path=output_dir_path
     )
     logging.info("Loss curve saved.")
 
     logging.info("Plotting metric curve for accuracy...")
     plot_metric_curve(
-        history=history, metric="accuracy", output_dir_path=output_dir_path
+        history=history,
+        metric_name="accuracy",
+        output_dir_path=output_dir_path,
     )
     logging.info("Accuracy curve saved.")
 

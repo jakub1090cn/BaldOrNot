@@ -33,14 +33,13 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     # Load datasets
     train_csv_path = os.path.join("..", "src", "data", "train.csv")
     train_df_unbalanced = pd.read_csv(train_csv_path)
-    train_df = BaldDataset.undersample_majority_class(
+    train_df_still_unb = BaldDataset.undersample_classes(
         train_df_unbalanced,
         label_col="label",
-        majority_class_label=NOT_BALD_LABEL,
-        desired_classes_ratio=config.training_params.desired_classes_ratio,
+        class_sample_sizes={0: 500, 1: 500},
     )
     train_dataset = BaldDataset(
-        train_df, batch_size=config.training_params.batch_size
+        train_df_still_unb, batch_size=config.training_params.batch_size
     )
     logging.info(
         f"Training dataset initialized with batch size "
@@ -49,14 +48,11 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
 
     val_csv_path = os.path.join("..", "src", "data", "val.csv")
     val_df_unbalanced = pd.read_csv(val_csv_path)
-    val_df = BaldDataset.undersample_majority_class(
-        val_df_unbalanced,
-        label_col="label",
-        majority_class_label=NOT_BALD_LABEL,
-        desired_classes_ratio=config.training_params.desired_classes_ratio,
+    val_df_still_unb = BaldDataset.undersample_classes(
+        val_df_unbalanced, label_col="label", class_sample_sizes={0: 50, 1: 50}
     )
     val_dataset = BaldDataset(
-        val_df, batch_size=config.training_params.batch_size
+        val_df_still_unb, batch_size=config.training_params.batch_size
     )
     logging.info(
         f"Validation dataset initialized with batch size "

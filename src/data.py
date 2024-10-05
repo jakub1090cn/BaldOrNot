@@ -384,3 +384,49 @@ class BaldDataset(keras.utils.Sequence):
     ) -> pd.DataFrame:
         df[column_name] = df[column_name].replace(original_label, new_label)
         return df
+
+    @staticmethod
+    def undersample_classes(df, label_col, class_sample_sizes):
+        """
+        Function to undersample each class to specified sample sizes.
+
+        Parameters:
+        -----------
+        df : pd.DataFrame
+            DataFrame containing the data.
+        label_col : str
+            Name of the column containing class labels.
+        class_sample_sizes : dict
+            Dictionary where keys are class labels and values are the desired number of samples
+            for each class (e.g., {0: 100, 1: 50}).
+
+        Returns:
+        --------
+        pd.DataFrame
+            DataFrame with each class undersampled to the desired number of samples.
+        """
+        # Initialize an empty list to store undersampled data
+        df_undersampled_list = []
+
+        for class_label, target_size in class_sample_sizes.items():
+            # Filter the DataFrame for the current class
+            df_class = df[df[label_col] == class_label]
+
+            # Determine the number of samples to take (cannot exceed the available number of samples)
+            n_samples = min(target_size, len(df_class))
+
+            # Randomly sample the specified number of samples
+            df_class_sampled = df_class.sample(n=n_samples, random_state=42)
+
+            # Append the undersampled class DataFrame to the list
+            df_undersampled_list.append(df_class_sampled)
+
+        # Concatenate the undersampled DataFrames for all classes
+        df_undersampled = pd.concat(df_undersampled_list, ignore_index=True)
+
+        # Optional: Shuffle the data
+        df_undersampled = df_undersampled.sample(
+            frac=1, random_state=42
+        ).reset_index(drop=True)
+
+        return df_undersampled
