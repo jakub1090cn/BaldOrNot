@@ -323,59 +323,6 @@ class BaldDataset(keras.utils.Sequence):
         return df
 
     @staticmethod
-    def undersample_majority_class(
-        df, label_col, majority_class_label, desired_classes_ratio
-    ):
-        """
-        Function to undersample the majority class based on a desired majority to minority ratio.
-
-        Parameters:
-        -----------
-        df : pd.DataFrame
-            DataFrame containing the data.
-        label_col : str
-            Name of the column containing class labels.
-        majority_class_label : int or str
-            Label of the majority class to be undersampled.
-        target_ratio : float
-            Desired ratio of majority to minority samples (e.g., 2.0 for a 2:1 ratio).
-
-        Returns:
-        --------
-        pd.DataFrame
-            DataFrame with the majority class undersampled to achieve the desired ratio.
-        """
-        # Split data into majority and minority classes
-        df_majority = df[df[label_col] == majority_class_label]
-        df_minority = df[df[label_col] != majority_class_label]
-
-        # Count the number of samples in the minority class
-        n_minority = len(df_minority)
-
-        # Calculate the number of samples needed for the majority class
-        n_majority = int(n_minority * desired_classes_ratio)
-
-        # Ensure n_majority does not exceed the original number of majority samples
-        n_majority = min(n_majority, len(df_majority))
-
-        # Undersample the majority class
-        df_majority_undersampled = df_majority.sample(
-            n=n_majority, random_state=42
-        )
-
-        # Combine undersampled majority class with minority class
-        df_undersampled = pd.concat(
-            [df_minority, df_majority_undersampled], ignore_index=True
-        )
-
-        # Optional: Shuffle the data
-        df_undersampled = df_undersampled.sample(
-            frac=1, random_state=42
-        ).reset_index(drop=True)
-
-        return df_undersampled
-
-    @staticmethod
     def replace_bald_label(
         df: pd.DataFrame,
         original_label: str,
