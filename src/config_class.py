@@ -18,7 +18,6 @@ class TrainingParams:
     optimizer: str = "adam"
     loss_function: str = "binary_crossentropy"
     training_name: str = "training_name"
-    class_weights_path = "../best_class_weights.json"
 
 
 @dataclass
