@@ -3,8 +3,8 @@ import os
 import pandas as pd
 
 from src.config_class import BaldOrNotConfig
+from src.constants import NOT_BALD_LABEL, ORIGINAL_NOT_BALD_LABEL
 from src.data import BaldDataset
-from src.constants import ORIGINAL_NOT_BALD_LABEL, NOT_BALD_LABEL
 
 config = BaldOrNotConfig()
 subsets_division_ds_path = config.paths.subsets_division_ds_path

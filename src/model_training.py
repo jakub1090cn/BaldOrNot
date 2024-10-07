@@ -1,6 +1,6 @@
+import json
 import logging
 import os
-import json
 from dataclasses import asdict
 from datetime import datetime
 
@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from constants import NOT_BALD_LABEL, BALD_LABEL
+from constants import BALD_LABEL, NOT_BALD_LABEL
 from src.config_class import BaldOrNotConfig
 from src.data import BaldDataset
 from src.model import BaldOrNotModel
