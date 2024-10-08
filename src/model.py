@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 from src.constants import IMG_LEN, N_CHANNELS_RGB
 
 

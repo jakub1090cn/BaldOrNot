@@ -11,6 +11,5 @@ training_params:
 metrics:
 - accuracy
 paths:
-  train_path: ''
-  val_path: ''
-  images_dir: ''
+  subsets_division_ds_path: ''
+  labels_ds_path: ''

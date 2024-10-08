@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -12,8 +12,8 @@ class ModelParams:
 
 @dataclass
 class TrainingParams:
-    epochs: int = 2
-    batch_size: int = 32
+    epochs: int = 20
+    batch_size: int = 64
     learning_rate: float = 0.001
     optimizer: str = "adam"
     loss_function: str = "binary_crossentropy"
@@ -32,9 +32,16 @@ class Callback:
 
 @dataclass
 class Paths:
-    subsets_path: str = ""
-    labels_path: str = ""
-    images_dir: str = ""
+    subsets_division_ds_path = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\" "list_eval_partition.csv"
+    )
+    labels_ds_path = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\" "list_attr_celeba.csv"
+    )
+    images_dir = (
+        "C:\\Users\\Admin\\Downloads\\archive (3)\\"
+        "img_align_celeba\\img_align_celeba"
+    )
 
 
 @dataclass

@@ -1,14 +1,15 @@
-import pytest
-import pandas as pd
-import numpy as np
 from unittest.mock import patch
 
-from src.data import BaldDataset
+import numpy as np
+import pandas as pd
+import pytest
+
 from src.constants import (
-    N_CHANNELS_RGB,
-    N_CHANNELS_GRAYSCALE,
     DEFAULT_IMG_SIZE,
+    N_CHANNELS_GRAYSCALE,
+    N_CHANNELS_RGB,
 )
+from src.data import BaldDataset
 
 
 @pytest.fixture
@@ -274,3 +275,53 @@ def test_create_subset_dfs(sample_df):
     assert len(val_df) == 1
     assert len(test_df) == 1
     assert "partition" not in test_df.columns
+
+
+def test_undersample_majority_class():
+    data_majority = {
+        "feature1": range(9000),
+        "feature2": range(9000, 18000),
+        "label": [0] * 9000,  # Majority class label is 0
+    }
+
+    data_minority = {
+        "feature1": range(1000),
+        "feature2": range(18000, 19000),
+        "label": [1] * 1000,  # Minority class label is 1
+    }
+
+    df_majority = pd.DataFrame(data_majority)
+    df_minority = pd.DataFrame(data_minority)
+
+    df_unbalanced = pd.concat([df_majority, df_minority], ignore_index=True)
+
+    df_unbalanced = df_unbalanced.sample(frac=1, random_state=42).reset_index(
+        drop=True
+    )
+    desired_ratio = 2.0
+    df_balanced = BaldDataset.undersample_majority_class(
+        df_unbalanced,
+        label_col="label",
+        majority_class_label=0,
+        desired_classes_ratio=desired_ratio,
+    )
+
+    n_minority = len(df_balanced[df_balanced["label"] == 1])
+    expected_n_majority = int(n_minority * desired_ratio)
+
+    n_majority = len(df_balanced[df_balanced["label"] == 0])
+
+    assert (
+        n_majority == expected_n_majority
+    ), f"Expected {expected_n_majority} majority samples, got {n_majority}"
+
+    expected_total_samples = n_minority + expected_n_majority
+    actual_total_samples = len(df_balanced)
+    assert (
+        actual_total_samples == expected_total_samples
+    ), f"Expected {expected_total_samples} samples, got {actual_total_samples}"
+
+    original_n_minority = len(df_unbalanced[df_unbalanced["label"] == 1])
+    assert (
+        n_minority == original_n_minority
+    ), "There should be no change in minority samples"

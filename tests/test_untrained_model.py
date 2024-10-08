@@ -1,7 +1,8 @@
 import pytest
 import tensorflow as tf
-from src.model import BaldOrNotModel
+
 from src.constants import IMG_LEN, N_CHANNELS_RGB
+from src.model import BaldOrNotModel
 
 
 def test_model_compile(model: BaldOrNotModel) -> None:

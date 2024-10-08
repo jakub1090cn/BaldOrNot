@@ -1,72 +1,68 @@
+import logging
+import os
 from dataclasses import asdict
 from datetime import datetime
-import tensorflow as tf
-import os
-import logging
 
+import pandas as pd
+import tensorflow as tf
+
+from src.config_class import BaldOrNotConfig
 from src.data import BaldDataset
 from src.model import BaldOrNotModel
-from src.config_class import BaldOrNotConfig
-from src.utils import check_log_exists_decorator
-from src.evaluation import evaluate_and_save_results
+from src.utils import check_log_exists
+from src.constants import BALD_LABEL, NOT_BALD_LABEL
 
 
-@check_log_exists_decorator
+def get_classes_weights():
+    df = pd.read_csv("..//src//data//train.csv")
+    n_total = len(df)
+    n_not_bald = df["label"].value_counts()[NOT_BALD_LABEL]
+    n_bald = df["label"].value_counts()[BALD_LABEL]
+    not_bald_weight = n_total / n_not_bald
+    bald_weight = n_total / n_bald
+    return {str(NOT_BALD_LABEL): not_bald_weight, str(BALD_LABEL): bald_weight}
+
+
+@check_log_exists
 def train_model(config: BaldOrNotConfig, output_dir_path: str):
     """
-    Trains the BaldOrNot model using the specified configuration.
-
-    This function initializes the dataset, constructs the model, compiles it
-    with the specified optimizer, loss function, and metrics, and then trains
-    the model on the dataset for the number of epochs defined in the
-    configuration.
+    Trains the BaldOrNot model using the specified configuration, with optional
+    hyperparameter tuning using Keras Tuner.
 
     Args:
-        config (BoldOrNotConfig): The configuration object containing model,
+        config (BaldOrNotConfig): The configuration object containing model,
         training, and path parameters.
-        output_dir_path: The dir path, where is saved model and metrics.
-    """
-    logging.info("Preparing data...")
-    merged_df = BaldDataset.prepare_merged_dataframe(
-        subsets_path=config.paths.subsets_path,
-        labels_path=config.paths.labels_path
-    )
+        output_dir_path (str): Directory where the trained model will be saved.
 
-    train_df, val_df, test_df = BaldDataset.create_subset_dfs(merged_df)
-    logging.info(
-        f"Load train data: {len(train_df)} images,\n"
-        f"Load validation data: {len(val_df)} images,\n"
-        f"Load test data: {len(test_df)} images."
-    )
+    Returns:
+        history: Training history object.
+    """
 
     logging.info("Starting model training...")
 
-    vector_dim = config.model_params.dense_units
-    batch_size = config.training_params.batch_size
-
-    # Log model parameters
+    # Load datasets
+    train_csv_path = os.path.join("..", "src", "data", "train.csv")
+    train_df = pd.read_csv(train_csv_path)
+    train_dataset = BaldDataset(
+        train_df, batch_size=config.training_params.batch_size
+    )
     logging.info(
-        f"Model configuration: Dense units: {vector_dim}, "
-        f"Batch size: {batch_size}"
+        f"Training dataset initialized with batch size "
+        f"{config.training_params.batch_size}"
     )
 
-    datasets = {
-        'train': BaldDataset(df=train_df, batch_size=batch_size),
-        'val': BaldDataset(df=val_df, batch_size=batch_size),
-        'test': BaldDataset(df=test_df, batch_size=batch_size)
-    }
-
+    val_csv_path = os.path.join("..", "src", "data", "val.csv")
+    val_df = pd.read_csv(val_csv_path)
+    val_dataset = BaldDataset(
+        val_df, batch_size=config.training_params.batch_size
+    )
     logging.info(
-        f"Datasets initialized with batch size {batch_size}"
-        f"and vector dim {vector_dim}"
+        f"Validation dataset initialized with batch size "
+        f"{config.training_params.batch_size}"
     )
 
-
-    # Initialize model
+    logging.info("Building model with predefined hyperparameters...")
     model = BaldOrNotModel(**asdict(config.model_params))
-    logging.info("Model initialized")
-
-    # Compile model
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=config.training_params.learning_rate
     )
@@ -74,10 +70,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         optimizer=optimizer,
         loss=config.training_params.loss_function,
         metrics=config.metrics,
-    )
-    logging.info(
-        f"Model compiled with Adam optimizer and learning rate "
-        f"{config.training_params.learning_rate}"
     )
 
     # Initialize callbacks
@@ -92,6 +84,8 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
                 f"{callback_dict['args']}"
             )
         elif callback_dict["type"] == "TensorBoard":
+            # callback_dict['log_dir'] = os.path.join(output_dir_path,
+            #                                         callback_dict['log_dir'])
             tf_callbacks.append(
                 tf.keras.callbacks.TensorBoard(**callback_dict["args"])
             )
@@ -100,24 +94,20 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
                 f"{callback_dict['args']}"
             )
 
-    # Train the model
+    # Train the best model
     logging.info(
         f"Starting training for {config.training_params.epochs} epochs"
     )
     history = model.fit(
-        datasets['train'],
+        train_dataset,
         epochs=config.training_params.epochs,
-        validation_data=datasets['val'],
+        class_weight=get_classes_weights(),
+        validation_data=val_dataset,
         callbacks=tf_callbacks,
     )
     logging.info("Model training completed")
 
-    for dataset_name, dataset in datasets.items():
-        evaluate_and_save_results(
-            model, dataset, dataset_name, output_dir_path
-        )
-
-    # Save model and plot
+    # Save the best model
     model_path = os.path.join(
         output_dir_path, config.model_params.saved_model_name
     )

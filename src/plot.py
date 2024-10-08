@@ -1,14 +1,16 @@
 import logging
-import pandas as pd
 import os
-import matplotlib.pyplot as plt
-import cv2
-from typing import List, Dict
+from typing import Dict, List
 
+import cv2
+import matplotlib.pyplot as plt
+import pandas as pd
 from keras.src.callbacks import History
 
+import setup_logging
 from src.constants import BALD_LABELS
-from utils import check_log_exists_decorator
+from src.utils import check_log_exists
+
 
 def display_sample_images(df: pd.DataFrame, dir_path: str) -> None:
     """
@@ -92,7 +94,7 @@ def plot_proportions(
     plt.show()
 
 
-@check_log_exists_decorator
+@check_log_exists
 def plot_metric_curve(
     history: History, metric_name: str, output_dir_path: str
 ) -> None:
@@ -108,7 +110,8 @@ def plot_metric_curve(
     """
     plt.figure(figsize=(10, 5))
     plt.plot(
-        history.history[metric_name], label=f"{metric_name.capitalize()} (training)"
+        history.history[metric_name],
+        label=f"{metric_name.capitalize()} (training)",
     )
 
     val_metric = f"val_{metric_name}"

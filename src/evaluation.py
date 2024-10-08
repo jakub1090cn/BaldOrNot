@@ -1,24 +1,28 @@
-import numpy as np
-import logging
-import tensorflow as tf
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
+from typing import Dict, List, Tuple, Union
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import tensorflow as tf
 from sklearn.metrics import (
     accuracy_score,
+    confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
-    confusion_matrix,
 )
+
+import setup_logging
 from src.constants import BALD_LABELS
-from src.utils import check_log_exists_decorator
-from typing import Tuple, Dict, List, Union
 from src.data import BaldDataset
 from src.model import BaldOrNotModel
+from src.utils import check_log_exists
 
 
-def make_predictions(model: tf.keras.Model, dataset: BaldDataset) -> Tuple[np.ndarray, np.ndarray]:
+def make_predictions(
+    model: tf.keras.Model, dataset: BaldDataset
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Makes predictions on the provided dataset and returns the true and
     predicted labels.
@@ -45,8 +49,9 @@ def make_predictions(model: tf.keras.Model, dataset: BaldDataset) -> Tuple[np.nd
     return y_true, y_pred
 
 
-def get_metrics(y_true: np.ndarray, y_pred: np.ndarray) \
-        -> Dict[str, Union[float, np.ndarray]]:
+def get_metrics(
+    y_true: np.ndarray, y_pred: np.ndarray
+) -> Dict[str, Union[float, np.ndarray]]:
     """
     Calculates various evaluation metrics based on the true and predicted labels.
 
@@ -69,15 +74,17 @@ def get_metrics(y_true: np.ndarray, y_pred: np.ndarray) \
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     return {
-        'accuracy': accuracy,
-        'precision': precision,
-        'recall': recall,
-        'f1_score': f1,
-        'conf_matrix': conf_matrix
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1,
+        "conf_matrix": conf_matrix,
     }
 
 
-def get_misclassifications(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def get_misclassifications(
+    y_true: np.ndarray, y_pred: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Identifies misclassifications by finding false positives and false negatives.
 
@@ -100,9 +107,7 @@ def get_misclassifications(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[np.n
 
 
 def drop_confusion_matrix(
-    confusion_matrix: np.ndarray,
-    class_names: List[str],
-    output_path: str
+    confusion_matrix: np.ndarray, class_names: List[str], output_path: str
 ) -> None:
     """
     Plots the confusion matrix and saves it as an image file.
@@ -122,7 +127,7 @@ def drop_confusion_matrix(
         fmt="d",
         cmap="Blues",
         xticklabels=class_names,
-        yticklabels=class_names
+        yticklabels=class_names,
     )
     plt.title("Confusion Matrix")
     plt.xlabel("Predicted Labels")
@@ -133,12 +138,12 @@ def drop_confusion_matrix(
     logging.info(f"Confusion matrix saved to {output_path}")
 
 
-@check_log_exists_decorator
+@check_log_exists
 def evaluate_and_save_results(
     model: BaldOrNotModel,
     dataset: BaldDataset,
     dataset_name: str,
-    output_dir_path: str
+    output_dir_path: str,
 ) -> None:
     """
     Evaluates the model on a given dataset, logs the metrics, and saves
@@ -162,19 +167,23 @@ def evaluate_and_save_results(
     metrics = get_metrics(y_true, y_pred)
     logging.info(f"{dataset_name.capitalize()} metrics: ")
     for metric, value in metrics.items():
-        if metric != 'conf_matrix':
+        if metric != "conf_matrix":
             logging.info(f"{metric}: {value:.4f}")
 
     # Save confusion matrix
     logging.info(f"Saving confusion matrix for {dataset_name} set...")
-    conf_matrix_path = os.path.join(output_dir_path, f'{dataset_name}_confusion_matrix.png')
+    conf_matrix_path = os.path.join(
+        output_dir_path, f"{dataset_name}_confusion_matrix.png"
+    )
     drop_confusion_matrix(
-        metrics['conf_matrix'],
+        metrics["conf_matrix"],
         class_names=BALD_LABELS,
-        output_path=conf_matrix_path
+        output_path=conf_matrix_path,
     )
 
     # Log misclassifications
     logging.info(f"Identifying misclassifications on {dataset_name} set...")
     false_positives, false_negatives = get_misclassifications(y_true, y_pred)
-    logging.info(f"False positives: {len(false_positives)}, False negatives: {len(false_negatives)}")
+    logging.info(
+        f"False positives: {len(false_positives)}, False negatives: {len(false_negatives)}"
+    )

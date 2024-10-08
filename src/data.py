@@ -1,15 +1,17 @@
 import os
-import cv2
-import numpy as np
-import keras
-import pandas as pd
 from typing import List, Tuple
+
+import cv2
+import keras
+import numpy as np
+import pandas as pd
 from sklearn.model_selection import train_test_split
+
 from src.config_class import BaldOrNotConfig
 from src.constants import (
-    N_CHANNELS_RGB,
-    N_CHANNELS_GRAYSCALE,
     DEFAULT_IMG_SIZE,
+    N_CHANNELS_GRAYSCALE,
+    N_CHANNELS_RGB,
 )
 from src.exceptions import BaldOrNotDataError
 
@@ -168,7 +170,8 @@ class BaldDataset(keras.utils.Sequence):
         images_dir = self.config.paths.images_dir
 
         for i, ID in enumerate(list_IDs_temp):
-            image_path = os.path.join(images_dir, ID)
+            reconverted_ID = f"{int(ID):06d}.jpg"
+            image_path = os.path.join(images_dir, reconverted_ID)  # noqa: E231
             image = cv2.imread(image_path)
 
             if image is None:
@@ -185,7 +188,7 @@ class BaldDataset(keras.utils.Sequence):
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
             X[i] = image / 255.0  # Normalize to range [0, 1]
-            y[i] = self.df.loc[self.df["image_id"] == ID, "labels"].values[0]
+            y[i] = self.df.loc[self.df["image_id"] == ID, "label"].values[0]
 
         return X, y
 
@@ -240,7 +243,7 @@ class BaldDataset(keras.utils.Sequence):
 
     @staticmethod
     def prepare_merged_dataframe(
-        subsets_path: str, labels_path: str
+        subsets_df: pd.DataFrame, labels_df: pd.DataFrame
     ) -> pd.DataFrame:
         """
         Prepares a combined DataFrame by merging two CSV files on a common
@@ -265,16 +268,14 @@ class BaldDataset(keras.utils.Sequence):
             A merged DataFrame containing data from both input CSVs,
             joined on the "image_id" column.
         """
-        subsets = pd.read_csv(subsets_path)
-        labels = pd.read_csv(labels_path)
-        df_merged = pd.merge(subsets, labels, how="inner", on="image_id")
+        df_merged = pd.merge(subsets_df, labels_df, how="inner", on="image_id")
 
         return df_merged[["image_id", "partition", "Bald"]].rename(
-            columns={"Bald": "labels"}
+            columns={"Bald": "label"}
         )
 
     @staticmethod
-    def create_subset_dfs(  # problem
+    def create_subset_dfs(
         df: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
@@ -311,3 +312,68 @@ class BaldDataset(keras.utils.Sequence):
         test_df = test_df.reset_index(drop=True)
 
         return train_df, val_df, test_df
+
+    @staticmethod
+    def convert_image_id_column_to_float(
+        df: pd.DataFrame, image_id_col: str = "image_id"
+    ) -> pd.DataFrame:
+        df[image_id_col] = (
+            df[image_id_col].str.replace(".jpg", "", regex=False).astype(float)
+        )
+        return df
+
+    @staticmethod
+    def replace_bald_label(
+        df: pd.DataFrame,
+        original_label: str,
+        new_label: str,
+        column_name: str = "label",
+    ) -> pd.DataFrame:
+        df[column_name] = df[column_name].replace(original_label, new_label)
+        return df
+
+    @staticmethod
+    def undersample_classes(df, label_col, class_sample_sizes):
+        """
+        Function to undersample each class to specified sample sizes.
+
+        Parameters:
+        -----------
+        df : pd.DataFrame
+            DataFrame containing the data.
+        label_col : str
+            Name of the column containing class labels.
+        class_sample_sizes : dict
+            Dictionary where keys are class labels and values are the desired number of samples
+            for each class (e.g., {0: 100, 1: 50}).
+
+        Returns:
+        --------
+        pd.DataFrame
+            DataFrame with each class undersampled to the desired number of samples.
+        """
+        # Initialize an empty list to store undersampled data
+        df_undersampled_list = []
+
+        for class_label, target_size in class_sample_sizes.items():
+            # Filter the DataFrame for the current class
+            df_class = df[df[label_col] == class_label]
+
+            # Determine the number of samples to take (cannot exceed the available number of samples)
+            n_samples = min(target_size, len(df_class))
+
+            # Randomly sample the specified number of samples
+            df_class_sampled = df_class.sample(n=n_samples, random_state=42)
+
+            # Append the undersampled class DataFrame to the list
+            df_undersampled_list.append(df_class_sampled)
+
+        # Concatenate the undersampled DataFrames for all classes
+        df_undersampled = pd.concat(df_undersampled_list, ignore_index=True)
+
+        # Optional: Shuffle the data
+        df_undersampled = df_undersampled.sample(
+            frac=1, random_state=42
+        ).reset_index(drop=True)
+
+        return df_undersampled

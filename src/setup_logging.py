@@ -1,5 +1,6 @@
 import logging
 import os
+
 from src.constants import LOG_FILE_NAME
 
 
@@ -33,4 +34,3 @@ def setup_logging(training_dir):
     logger.addHandler(file_handler)
 
     logging.info(f"Logging initialized. Logs will be saved to {log_file}")
-
