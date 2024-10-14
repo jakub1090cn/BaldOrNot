@@ -6,11 +6,18 @@ from datetime import datetime
 import pandas as pd
 import tensorflow as tf
 
+
 from src.config_class import BaldOrNotConfig
 from src.data import BaldDataset
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
-from src.constants import BALD_LABEL, NOT_BALD_LABEL
+from src.constants import (
+    BALD_LABEL,
+    NOT_BALD_LABEL,
+    NUMBER_OF_CLASSES,
+    DEFAULT_IMG_SIZE,
+    N_CHANNELS_RGB,
+)
 
 
 def get_classes_weights():
@@ -18,8 +25,8 @@ def get_classes_weights():
     n_total = len(df)
     n_not_bald = df["label"].value_counts()[NOT_BALD_LABEL]
     n_bald = df["label"].value_counts()[BALD_LABEL]
-    not_bald_weight = n_total / n_not_bald
-    bald_weight = n_total / n_bald
+    not_bald_weight = (1 / n_not_bald) * (n_total / NUMBER_OF_CLASSES)
+    bald_weight = (1 / n_bald) * (n_total / NUMBER_OF_CLASSES)
     return {str(NOT_BALD_LABEL): not_bald_weight, str(BALD_LABEL): bald_weight}
 
 
@@ -40,11 +47,19 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
 
     logging.info("Starting model training...")
 
-    # Load datasets
     train_csv_path = os.path.join("..", "src", "data", "train.csv")
     train_df = pd.read_csv(train_csv_path)
+    train_df = BaldDataset.adjust_class_distribution(
+        train_df,
+        max_class_ratio=config.training_params.max_class_imbalance_ratio,
+    )
     train_dataset = BaldDataset(
-        train_df, batch_size=config.training_params.batch_size
+        train_df,
+        batch_size=config.training_params.batch_size,
+        dim=DEFAULT_IMG_SIZE,
+        n_channels=N_CHANNELS_RGB,
+        shuffle=True,
+        augment_minority_class=config.training_params.augment_class,
     )
     logging.info(
         f"Training dataset initialized with batch size "
@@ -54,7 +69,12 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     val_csv_path = os.path.join("..", "src", "data", "val.csv")
     val_df = pd.read_csv(val_csv_path)
     val_dataset = BaldDataset(
-        val_df, batch_size=config.training_params.batch_size
+        val_df,
+        batch_size=config.training_params.batch_size,
+        dim=DEFAULT_IMG_SIZE,
+        n_channels=N_CHANNELS_RGB,
+        shuffle=True,
+        augment_minority_class=False,
     )
     logging.info(
         f"Validation dataset initialized with batch size "
@@ -72,7 +92,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         metrics=config.metrics,
     )
 
-    # Initialize callbacks
     tf_callbacks = []
     for callback_dict in config.callbacks:
         if callback_dict["type"] == "EarlyStopping":
@@ -94,7 +113,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
                 f"{callback_dict['args']}"
             )
 
-    # Train the best model
     logging.info(
         f"Starting training for {config.training_params.epochs} epochs"
     )
@@ -104,10 +122,11 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         class_weight=get_classes_weights(),
         validation_data=val_dataset,
         callbacks=tf_callbacks,
+        steps_per_epoch=config.training_params.steps_per_epoch,
+        validation_steps=config.training_params.validation_steps,
     )
     logging.info("Model training completed")
 
-    # Save the best model
     model_path = os.path.join(
         output_dir_path, config.model_params.saved_model_name
     )

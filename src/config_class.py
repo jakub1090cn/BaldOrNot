@@ -12,12 +12,16 @@ class ModelParams:
 
 @dataclass
 class TrainingParams:
-    epochs: int = 20
+    epochs: int = 1
     batch_size: int = 64
     learning_rate: float = 0.001
     optimizer: str = "adam"
     loss_function: str = "binary_crossentropy"
     training_name: str = "training_name"
+    max_class_imbalance_ratio: float = 2
+    augment_class: bool = True
+    steps_per_epoch: int = 1
+    validation_steps: int = 1
 
 
 @dataclass

@@ -1,15 +1,13 @@
 import os
 from typing import List, Tuple
-
 import cv2
 import keras
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from sklearn.model_selection import train_test_split
-
 from src.config_class import BaldOrNotConfig
 from src.constants import (
-    DEFAULT_IMG_SIZE,
     N_CHANNELS_GRAYSCALE,
     N_CHANNELS_RGB,
 )
@@ -21,9 +19,8 @@ class BaldDataset(keras.utils.Sequence):
     Generates data for Keras models.
 
     This class is responsible for creating batches of data to be fed into
-    a Keras model.
-    It loads images from a directory, preprocesses them, and returns them
-    along with their corresponding labels.
+    a Keras model. It loads images from a directory, preprocesses them, and
+    returns them along with their corresponding labels.
 
     Attributes:
     ----------
@@ -33,41 +30,38 @@ class BaldDataset(keras.utils.Sequence):
         The number of samples per batch.
     dim : Tuple[int, int]
         The dimensions to which all images will be resized (height, width).
-    n_channels : int, optional
-    Number of channels in the images. Must be either 1 for grayscale or 3 for
-    RGB images (default is 3).
-    n_classes : int
-        The number of classes (used for one-hot encoding of labels).
+    n_channels : int
+        Number of channels in the images. Must be either 1 for grayscale or 3 for RGB.
     shuffle : bool
         Whether to shuffle the order of samples at the end of each epoch.
     indexes : np.ndarray
         Array of indices used to keep track of the current batch.
-    labels : pd.Series
-        Series containing labels corresponding to each image ID.
     list_IDs : pd.Series
         Series containing the list of image IDs.
+    config : BaldOrNotConfig
+        Configuration object containing paths and settings.
 
     Methods:
     -------
-    __len__():
+    __len__() -> int:
         Returns the number of batches per epoch.
     __getitem__(index: int) -> Tuple[np.ndarray, np.ndarray]:
         Generates one batch of data.
-    on_epoch_end():
+    on_epoch_end() -> None:
         Updates indexes after each epoch.
-    __data_generation(list_IDs_temp: List[str]) ->
-    Tuple[np.ndarray, np.ndarray]:
+    __data_preprocessing(list_IDs_temp: List[str]) -> Tuple[np.ndarray, np.ndarray]:
         Generates data containing batch_size samples.
     """
 
     def __init__(
         self,
         df: pd.DataFrame,
-        batch_size: int = 32,
-        dim: Tuple[int, int] = DEFAULT_IMG_SIZE,
-        n_channels: int = N_CHANNELS_RGB,
-        shuffle: bool = True,
-    ):
+        batch_size: int,
+        dim: Tuple[int, int],
+        n_channels: int,
+        shuffle: bool,
+        augment_minority_class: bool,
+    ) -> None:
         """
         Initialization method for BaldDataset.
 
@@ -81,11 +75,8 @@ class BaldDataset(keras.utils.Sequence):
             Dimensions to which images will be resized (default is (218, 178)).
         n_channels : int, optional
             Number of channels in the images (default is 3 for RGB).
-        n_classes : int, optional
-            Number of classes for classification (default is 2).
         shuffle : bool, optional
-            Whether to shuffle the data at the beginning of each epoch
-            (default is True).
+            Whether to shuffle the data at the beginning of each epoch (default is True).
         """
         super().__init__()
         if n_channels not in [N_CHANNELS_GRAYSCALE, N_CHANNELS_RGB]:
@@ -101,6 +92,9 @@ class BaldDataset(keras.utils.Sequence):
         self.shuffle = shuffle
         self.config = BaldOrNotConfig()
         self.on_epoch_end()
+        self.augment_minority_class = augment_minority_class
+        label_counts = self.df["label"].value_counts()
+        self.minority_class_label = label_counts.idxmin()
 
     def __len__(self) -> int:
         """
@@ -115,7 +109,7 @@ class BaldDataset(keras.utils.Sequence):
 
     def __getitem__(self, index: int) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Generate one batch of data.
+        Generates one batch of data.
 
         Parameters:
         ----------
@@ -130,14 +124,11 @@ class BaldDataset(keras.utils.Sequence):
         indexes = self.indexes[
             index * self.batch_size : (index + 1) * self.batch_size
         ]
-
         list_IDs_temp = [self.list_IDs[k] for k in indexes]
-
         X, y = self.__data_preprocessing(list_IDs_temp)
-
         return X, y
 
-    def on_epoch_end(self):
+    def on_epoch_end(self) -> None:
         """
         Updates indexes after each epoch.
 
@@ -147,6 +138,12 @@ class BaldDataset(keras.utils.Sequence):
         self.indexes = np.arange(len(self.list_IDs))
         if self.shuffle:
             np.random.shuffle(self.indexes)
+
+    def _augment_image(self, image: tf.Tensor) -> tf.Tensor:
+        image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_brightness(image, max_delta=0.1)
+        image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
+        return image
 
     def __data_preprocessing(
         self, list_IDs_temp: List[str]
@@ -171,22 +168,30 @@ class BaldDataset(keras.utils.Sequence):
 
         for i, ID in enumerate(list_IDs_temp):
             reconverted_ID = f"{int(ID):06d}.jpg"
-            image_path = os.path.join(images_dir, reconverted_ID)  # noqa: E231
+            image_path = os.path.join(images_dir, reconverted_ID)
             image = cv2.imread(image_path)
 
             if image is None:
                 raise BaldOrNotDataError(f"Failed to load image: {image_path}")
 
             image = cv2.resize(image, self.dim[::-1])
-            # avoiding ValueError by adjusting self.dim order
 
             # If grayscale, convert it to RGB
             if (
                 image.shape[-1] == N_CHANNELS_GRAYSCALE
-                and self.n_channels == N_CHANNELS_RGB  # noqa: W503
+                and self.n_channels == N_CHANNELS_RGB
             ):
                 image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
+            label = self.df.loc[self.df["image_id"] == ID, "label"].values[0]
+            y[i] = label
+            if (
+                self.augment_minority_class
+                and label == self.minority_class_label
+            ):
+                image = self._augment_image(image)
+
+            image = tf.cast(image, tf.float32)
             X[i] = image / 255.0  # Normalize to range [0, 1]
             y[i] = self.df.loc[self.df["image_id"] == ID, "label"].values[0]
 
@@ -220,8 +225,7 @@ class BaldDataset(keras.utils.Sequence):
     @staticmethod
     def get_cleaned_df(df: pd.DataFrame, images_dir: str) -> pd.DataFrame:
         """
-        Cleans the DataFrame by removing rows corresponding to empty or
-        corrupted images.
+        Cleans the DataFrame by removing rows corresponding to empty or corrupted images.
 
         Parameters:
         ----------
@@ -233,12 +237,10 @@ class BaldDataset(keras.utils.Sequence):
         Returns:
         -------
         pd.DataFrame
-            A cleaned DataFrame with rows for empty or corrupted images
-            removed.
+            A cleaned DataFrame with rows for empty or corrupted images removed.
         """
         empty_or_corrupted = BaldDataset.__get_wrong_files_list(images_dir)
         cleaned_df = df[~df["image_id"].isin(empty_or_corrupted)]
-
         return cleaned_df
 
     @staticmethod
@@ -246,30 +248,21 @@ class BaldDataset(keras.utils.Sequence):
         subsets_df: pd.DataFrame, labels_df: pd.DataFrame
     ) -> pd.DataFrame:
         """
-        Prepares a combined DataFrame by merging two CSV files on a common
-        column.
-
-        This function reads two CSV files into DataFrames: one containing
-        subsets of data and the other containing labels. It then merges these
-        DataFrames on the "image_id"  column using an inner join, which means
-        that only the rows with matching "image_id" values in both DataFrames
-        will be retained in the final result.
+        Prepares a combined DataFrame by merging two dataframes on a common column.
 
         Parameters:
         ----------
-        subsets_path : str
-            The file path to the CSV containing the subsets data.
-        labels_path : str
-            The file path to the CSV containing the labels data.
+        subsets_df : pd.DataFrame
+            DataFrame containing the subsets data.
+        labels_df : pd.DataFrame
+            DataFrame containing the labels data.
 
         Returns:
         -------
         pd.DataFrame
-            A merged DataFrame containing data from both input CSVs,
-            joined on the "image_id" column.
+            A merged DataFrame containing data from both input DataFrames, joined on the "image_id" column.
         """
         df_merged = pd.merge(subsets_df, labels_df, how="inner", on="image_id")
-
         return df_merged[["image_id", "partition", "Bald"]].rename(
             columns={"Bald": "label"}
         )
@@ -280,10 +273,6 @@ class BaldDataset(keras.utils.Sequence):
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         """
         Splits the DataFrame into training, validation, and test sets.
-
-        This function filters the DataFrame based on the partition column and
-        then  splits the training data further into training and validation
-        sets.
 
         Parameters:
         ----------
@@ -307,16 +296,31 @@ class BaldDataset(keras.utils.Sequence):
             random_state=42,
         )
 
-        train_df = train_df.reset_index(drop=True)
-        val_df = val_df.reset_index(drop=True)
-        test_df = test_df.reset_index(drop=True)
-
-        return train_df, val_df, test_df
+        return (
+            train_df.reset_index(drop=True),
+            val_df.reset_index(drop=True),
+            test_df.reset_index(drop=True),
+        )
 
     @staticmethod
     def convert_image_id_column_to_float(
         df: pd.DataFrame, image_id_col: str = "image_id"
     ) -> pd.DataFrame:
+        """
+        Converts the "image_id" column to float by removing ".jpg".
+
+        Parameters:
+        ----------
+        df : pd.DataFrame
+            DataFrame containing image IDs.
+        image_id_col : str, optional
+            Column name for image IDs (default is "image_id").
+
+        Returns:
+        -------
+        pd.DataFrame
+            DataFrame with converted image IDs.
+        """
         df[image_id_col] = (
             df[image_id_col].str.replace(".jpg", "", regex=False).astype(float)
         )
@@ -329,51 +333,99 @@ class BaldDataset(keras.utils.Sequence):
         new_label: str,
         column_name: str = "label",
     ) -> pd.DataFrame:
+        """
+        Replaces labels in the specified column.
+
+        Parameters:
+        ----------
+        df : pd.DataFrame
+            DataFrame containing the data.
+        original_label : str
+            The original label to be replaced.
+        new_label : str
+            The new label to replace the original.
+        column_name : str, optional
+            The name of the column where the replacement will happen (default is "label").
+
+        Returns:
+        -------
+        pd.DataFrame
+            DataFrame with replaced labels.
+        """
         df[column_name] = df[column_name].replace(original_label, new_label)
         return df
 
     @staticmethod
-    def undersample_classes(df, label_col, class_sample_sizes):
+    def undersample_classes(
+        df: pd.DataFrame, label_col: str, class_sample_sizes: dict
+    ) -> pd.DataFrame:
         """
         Function to undersample each class to specified sample sizes.
 
         Parameters:
-        -----------
+        ----------
         df : pd.DataFrame
             DataFrame containing the data.
         label_col : str
             Name of the column containing class labels.
         class_sample_sizes : dict
-            Dictionary where keys are class labels and values are the desired number of samples
-            for each class (e.g., {0: 100, 1: 50}).
+            Dictionary where keys are class labels and values are the desired number of samples for each class.
 
         Returns:
-        --------
+        -------
         pd.DataFrame
             DataFrame with each class undersampled to the desired number of samples.
         """
-        # Initialize an empty list to store undersampled data
         df_undersampled_list = []
 
         for class_label, target_size in class_sample_sizes.items():
-            # Filter the DataFrame for the current class
             df_class = df[df[label_col] == class_label]
-
-            # Determine the number of samples to take (cannot exceed the available number of samples)
             n_samples = min(target_size, len(df_class))
-
-            # Randomly sample the specified number of samples
             df_class_sampled = df_class.sample(n=n_samples, random_state=42)
-
-            # Append the undersampled class DataFrame to the list
             df_undersampled_list.append(df_class_sampled)
 
-        # Concatenate the undersampled DataFrames for all classes
         df_undersampled = pd.concat(df_undersampled_list, ignore_index=True)
+        return df_undersampled.sample(frac=1, random_state=42).reset_index(
+            drop=True
+        )
 
-        # Optional: Shuffle the data
-        df_undersampled = df_undersampled.sample(
-            frac=1, random_state=42
-        ).reset_index(drop=True)
+    @staticmethod
+    def adjust_class_distribution(
+        df: pd.DataFrame, max_class_ratio: float, label_col: str = "label"
+    ) -> pd.DataFrame:
+        """
+        Adjusts class distribution by ensuring that the majority class does not exceed the specified ratio
+        compared to the minority class.
 
-        return df_undersampled
+        Parameters:
+        ----------
+        df : pd.DataFrame
+            DataFrame containing the data.
+        max_class_ratio : float
+            The maximum allowed ratio between the majority and minority class.
+        label_col : str, optional
+            The column containing the class labels (default is "label").
+
+        Returns:
+        -------
+        pd.DataFrame
+            DataFrame with adjusted class distribution.
+        """
+        class_counts = df[label_col].value_counts()
+        majority_class = class_counts.idxmax()
+        minority_class = class_counts.idxmin()
+
+        majority_count = class_counts[majority_class]
+        minority_count = class_counts[minority_class]
+
+        if majority_count > max_class_ratio * minority_count:
+            new_majority_count = max_class_ratio * minority_count
+            majority_class_df = df[df[label_col] == majority_class]
+            minority_class_df = df[df[label_col] == minority_class]
+            majority_class_df = majority_class_df.sample(
+                new_majority_count, random_state=42
+            )
+            adjusted_df = pd.concat([majority_class_df, minority_class_df])
+            return adjusted_df.reset_index(drop=True)
+        else:
+            return df
