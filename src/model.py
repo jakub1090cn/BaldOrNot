@@ -25,8 +25,9 @@ class BaldOrNotModel(tf.keras.Model):
         dense_units: int,
         freeze_backbone: bool,
         dropout_rate: float | None,
+            **kwargs
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         self.backbone: tf.keras.Model = tf.keras.applications.ConvNeXtTiny(
             include_top=False, input_shape=(IMG_LEN, IMG_LEN, N_CHANNELS_RGB)
         )
@@ -57,3 +58,16 @@ class BaldOrNotModel(tf.keras.Model):
 
         x = self.backbone(inputs)
         return self.classifier(x)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "dense_units": self.classifier.layers[1].units,
+            "freeze_backbone": not self.backbone.trainable,
+            "dropout_rate": self.classifier.layers[2].rate if len(self.classifier.layers) > 3 else None,
+        })
+        return config
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
