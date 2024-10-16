@@ -1,5 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List
+import tensorflow as tf
 
 
 @dataclass
@@ -12,16 +13,17 @@ class ModelParams:
 
 @dataclass
 class TrainingParams:
-    epochs: int = 1
+    epochs: int = 5
     batch_size: int = 64
     learning_rate: float = 0.001
     optimizer: str = "adam"
     loss_function: str = "binary_crossentropy"
     training_name: str = "training_name"
     max_class_imbalance_ratio: float = 2
+    use_class_weight: bool = False
     augment_class: bool = True
-    steps_per_epoch: int = 1
-    validation_steps: int = 1
+    steps_per_epoch: int | None = None
+    validation_steps: int | None = 50
 
 
 @dataclass
@@ -66,7 +68,9 @@ class BaldOrNotConfig:
             ).to_dict(),
         ]
     )
-    metrics: List[str] = field(default_factory=lambda: ["accuracy"])
+    metrics: List[str] = field(
+        default_factory=lambda: ["accuracy", "precision", "recall", "f1_score"]
+    )
     paths: Paths = field(default_factory=lambda: Paths())
 
     def __post_init__(self):

@@ -3,14 +3,15 @@ import os
 from dataclasses import asdict
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 
 from src.config_class import BaldOrNotConfig
 from src.data import BaldDataset
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
+from src.metrics import get_metrics
 from src.constants import (
     BALD_LABEL,
     NOT_BALD_LABEL,
@@ -89,7 +90,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     model.compile(
         optimizer=optimizer,
         loss=config.training_params.loss_function,
-        metrics=config.metrics,
+        metrics=get_metrics(config.metrics),
     )
 
     tf_callbacks = []
@@ -116,10 +117,14 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     logging.info(
         f"Starting training for {config.training_params.epochs} epochs"
     )
+    if config.training_params.use_class_weight:
+        class_weight = get_classes_weights()
+    else:
+        class_weight = None
     history = model.fit(
         train_dataset,
         epochs=config.training_params.epochs,
-        class_weight=get_classes_weights(),
+        class_weight=class_weight,
         validation_data=val_dataset,
         callbacks=tf_callbacks,
         steps_per_epoch=config.training_params.steps_per_epoch,

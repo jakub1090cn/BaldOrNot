@@ -39,19 +39,15 @@ def run_experiment(config: BaldOrNotConfig):
         f"{json.dumps(history.history, indent=4)}"
     )
 
-    logging.info("Plotting metric curve for loss...")
-    plot_metric_curve(
-        history=history, metric_name="loss", output_dir_path=output_dir_path
-    )
-    logging.info("Loss curve saved.")
-
-    logging.info("Plotting metric curve for accuracy...")
-    plot_metric_curve(
-        history=history,
-        metric_name="accuracy",
-        output_dir_path=output_dir_path,
-    )
-    logging.info("Accuracy curve saved.")
+    for metric in ["loss", "accuracy", "precision", "recall", "f1_score"]:
+        if metric in history.history:
+            logging.info(f"Plotting metric curve for {metric}...")
+            plot_metric_curve(
+                history=history,
+                metric_name=metric,
+                output_dir_path=output_dir_path,
+            )
+            logging.info(f"{metric.capitalize()} curve saved.")
 
     logging.info("Experiment completed successfully.")
 
