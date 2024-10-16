@@ -3,7 +3,7 @@ from keras_tuner import HyperParameters, RandomSearch
 from itertools import product
 import logging
 
-from constants import N_CHANNELS_RGB, DEFAULT_IMG_SIZE
+from src.constants import N_CHANNELS_RGB, DEFAULT_IMG_SIZE
 from src.model import BaldOrNotModel
 from src.data import BaldDataset
 from src.utils import check_log_exists
