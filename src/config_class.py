@@ -13,7 +13,7 @@ class ModelParams:
 
 @dataclass
 class TrainingParams:
-    epochs: int = 5
+    epochs: int = 200
     batch_size: int = 64
     learning_rate: float = 0.001
     optimizer: str = "adam"
@@ -24,6 +24,8 @@ class TrainingParams:
     augment_class: bool = True
     steps_per_epoch: int | None = None
     validation_steps: int | None = 50
+    use_hyperparameter_tuning: bool = True
+    max_tuning_trials: int = 15
 
 
 @dataclass

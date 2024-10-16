@@ -140,7 +140,7 @@ class BaldDataset(keras.utils.Sequence):
             np.random.shuffle(self.indexes)
 
     def _augment_image(self, image: tf.Tensor) -> tf.Tensor:
-        # image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_flip_left_right(image)
         image = tf.image.random_brightness(image, max_delta=0.1)
         image = tf.image.random_contrast(image, lower=0.9, upper=1.1)
         return image
@@ -423,7 +423,7 @@ class BaldDataset(keras.utils.Sequence):
             majority_class_df = df[df[label_col] == majority_class]
             minority_class_df = df[df[label_col] == minority_class]
             majority_class_df = majority_class_df.sample(
-                new_majority_count, random_state=42
+                int(new_majority_count), random_state=42
             )
             adjusted_df = pd.concat([majority_class_df, minority_class_df])
             return adjusted_df.reset_index(drop=True)

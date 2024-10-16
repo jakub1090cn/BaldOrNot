@@ -1,9 +1,7 @@
 import logging
 import os
-from dataclasses import asdict
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 import tensorflow as tf
 
@@ -19,6 +17,7 @@ from src.constants import (
     DEFAULT_IMG_SIZE,
     N_CHANNELS_RGB,
 )
+from src.tuning import tune_training_process
 
 
 def get_classes_weights():
@@ -33,66 +32,82 @@ def get_classes_weights():
 
 @check_log_exists
 def train_model(config: BaldOrNotConfig, output_dir_path: str):
-    """
-    Trains the BaldOrNot model using the specified configuration, with optional
-    hyperparameter tuning using Keras Tuner.
-
-    Args:
-        config (BaldOrNotConfig): The configuration object containing model,
-        training, and path parameters.
-        output_dir_path (str): Directory where the trained model will be saved.
-
-    Returns:
-        history: Training history object.
-    """
-
     logging.info("Starting model training...")
 
     train_csv_path = os.path.join("..", "src", "data", "train.csv")
     train_df = pd.read_csv(train_csv_path)
-    train_df = BaldDataset.adjust_class_distribution(
-        train_df,
-        max_class_ratio=config.training_params.max_class_imbalance_ratio,
-    )
-    train_dataset = BaldDataset(
-        train_df,
-        batch_size=config.training_params.batch_size,
-        dim=DEFAULT_IMG_SIZE,
-        n_channels=N_CHANNELS_RGB,
-        shuffle=True,
-        augment_minority_class=config.training_params.augment_class,
-    )
-    logging.info(
-        f"Training dataset initialized with batch size "
-        f"{config.training_params.batch_size}"
-    )
 
     val_csv_path = os.path.join("..", "src", "data", "val.csv")
     val_df = pd.read_csv(val_csv_path)
+
+    param_sources = {
+        "model_params": ["dense_units", "dropout_rate"],
+        "training_params": [
+            "batch_size",
+            "learning_rate",
+            "max_class_imbalance_ratio",
+            "use_class_weight",
+            "augment_class",
+        ],
+    }
+
+    if config.training_params.use_hyperparameter_tuning:
+        logging.info("Starting hyperparameter tuning...")
+        best_hyperparameters = tune_training_process(
+            train_df, val_df, config=config, output_dir_path=output_dir_path
+        )
+        current_params = best_hyperparameters
+    else:
+        current_params = {
+            param: getattr(getattr(config, source), param)
+            for source, params in param_sources.items()
+            for param in params
+        }
+
+    for param_name, param_value in current_params.items():
+        globals()[param_name] = param_value
+
+    balanced_train_df = BaldDataset.adjust_class_distribution(
+        train_df,
+        max_class_ratio=max_class_imbalance_ratio,
+    )
+    train_dataset = BaldDataset(
+        balanced_train_df,
+        batch_size=batch_size,
+        dim=DEFAULT_IMG_SIZE,
+        n_channels=N_CHANNELS_RGB,
+        shuffle=True,
+        augment_minority_class=augment_class,
+    )
+    logging.info(f"Training dataset initialized with batch size {batch_size}")
+
     val_dataset = BaldDataset(
         val_df,
-        batch_size=config.training_params.batch_size,
+        batch_size=batch_size,
         dim=DEFAULT_IMG_SIZE,
         n_channels=N_CHANNELS_RGB,
         shuffle=True,
         augment_minority_class=False,
     )
     logging.info(
-        f"Validation dataset initialized with batch size "
-        f"{config.training_params.batch_size}"
+        f"Validation dataset initialized with batch size {batch_size}"
     )
 
     logging.info("Building model with predefined hyperparameters...")
-    model = BaldOrNotModel(**asdict(config.model_params))
-    optimizer = tf.keras.optimizers.Adam(
-        learning_rate=config.training_params.learning_rate
+    model = BaldOrNotModel(
+        dense_units=dense_units,
+        dropout_rate=dropout_rate,
+        freeze_backbone=config.model_params.freeze_backbone,
     )
+
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     model.compile(
         optimizer=optimizer,
         loss=config.training_params.loss_function,
         metrics=get_metrics(config.metrics),
     )
 
+    # Initialize callbacks
     tf_callbacks = []
     for callback_dict in config.callbacks:
         if callback_dict["type"] == "EarlyStopping":
@@ -104,8 +119,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
                 f"{callback_dict['args']}"
             )
         elif callback_dict["type"] == "TensorBoard":
-            # callback_dict['log_dir'] = os.path.join(output_dir_path,
-            #                                         callback_dict['log_dir'])
             tf_callbacks.append(
                 tf.keras.callbacks.TensorBoard(**callback_dict["args"])
             )
@@ -117,10 +130,12 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     logging.info(
         f"Starting training for {config.training_params.epochs} epochs"
     )
-    if config.training_params.use_class_weight:
+
+    if use_class_weight:
         class_weight = get_classes_weights()
     else:
         class_weight = None
+
     history = model.fit(
         train_dataset,
         epochs=config.training_params.epochs,
@@ -130,6 +145,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         steps_per_epoch=config.training_params.steps_per_epoch,
         validation_steps=config.training_params.validation_steps,
     )
+
     logging.info("Model training completed")
 
     model_path = os.path.join(
