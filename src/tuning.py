@@ -50,6 +50,13 @@ def tune_training_process(train_df, val_df, config, output_dir_path):
     best_val_loss = float("inf")
     best_params = {}
 
+    # Initialize a dictionary to keep track of the best values for each parameter
+    best_values = {
+        "dense_units": float("inf"),
+        "dropout_rate": float("inf"),
+        "learning_rate": float("inf"),
+    }
+
     param_combinations = list(
         product(
             batch_sizes,
@@ -116,16 +123,30 @@ def tune_training_process(train_df, val_df, config, output_dir_path):
         logging.info("Starting hyperparameter tuning...")
         tuner.search(
             train_dataset,
-            epochs=5,
+            epochs=1,
             validation_data=val_dataset,
-            steps_per_epoch=20,
-            validation_steps=20,
+            steps_per_epoch=1,
+            validation_steps=1,
         )
 
-        best_trial = tuner.get_best_hyperparameters(num_trials=1)[0]
-        val_loss = best_trial.get("val_loss", float("inf"))
-        logging.info(f"Best val_loss for current trial: {val_loss}")
+        current_trial = tuner.get_best_hyperparameters(num_trials=1)[0]
+        print(current_trial)
+        print(type(current_trial))
+        current_trial = tuner.oracle.get_best_trials(num_trials=1)[0]
+        val_loss = current_trial.metrics.get("val_loss")
+        if val_loss == float("inf"):
+            logging.info("No val_loss found for the current trial.")
+        else:
+            logging.info(f"Best val_loss for current trial: {val_loss}")
 
+        # Update best values for current trial parameters
+        for param in ["dense_units", "dropout_rate", "learning_rate"]:
+            current_value = current_trial.get(param)
+            if current_value < best_values[param]:
+                best_values[param] = current_value
+                logging.info(f"New best value for {param}: {current_value}")
+
+        # Update best parameters if current validation loss is better
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             best_params = {
@@ -133,10 +154,16 @@ def tune_training_process(train_df, val_df, config, output_dir_path):
                 "max_class_imbalance_ratio": max_class_imbalance_ratio,
                 "use_class_weight": use_class_weight,
                 "augment_class": augment_class,
-                "dense_units": best_trial.get("dense_units"),
-                "dropout_rate": best_trial.get("dropout_rate"),
-                "learning_rate": best_trial.get("learning_rate"),
+                "dense_units": current_trial.get("dense_units"),
+                "dropout_rate": current_trial.get("dropout_rate"),
+                "learning_rate": current_trial.get("learning_rate"),
             }
             logging.info(f"New best parameters found: {best_params}")
+            print(f"New best parameters found: {best_params}")
+
+        logging.info(f"Best val_loss to this point: {best_val_loss}")
+        logging.info(f"Best params to this point: {best_params}")
+        print(f"Best val_loss to this point: {best_val_loss}")
+        print(f"Best params to this point: {best_params}")
 
     return best_params
