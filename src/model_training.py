@@ -1,5 +1,6 @@
 import logging
 import os
+from dataclasses import asdict
 from datetime import datetime
 
 import pandas as pd
@@ -10,97 +11,64 @@ from src.data import BaldDataset
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
 from src.metrics import get_metrics
+from src.tuning import tune_model
 from src.constants import (
-    BALD_LABEL,
-    NOT_BALD_LABEL,
-    NUMBER_OF_CLASSES,
     DEFAULT_IMG_SIZE,
     N_CHANNELS_RGB,
 )
-from src.tuning import tune_training_process
-
-
-def get_classes_weights():
-    df = pd.read_csv("..//src//data//train.csv")
-    n_total = len(df)
-    n_not_bald = df["label"].value_counts()[NOT_BALD_LABEL]
-    n_bald = df["label"].value_counts()[BALD_LABEL]
-    not_bald_weight = (1 / n_not_bald) * (n_total / NUMBER_OF_CLASSES)
-    bald_weight = (1 / n_bald) * (n_total / NUMBER_OF_CLASSES)
-    return {str(NOT_BALD_LABEL): not_bald_weight, str(BALD_LABEL): bald_weight}
 
 
 @check_log_exists
 def train_model(config: BaldOrNotConfig, output_dir_path: str):
+    """
+    Trains the BaldOrNot model using the specified configuration, with optional
+    hyperparameter tuning using Keras Tuner.
+    """
     logging.info("Starting model training...")
 
+    # Initialize datasets
     train_csv_path = os.path.join("..", "src", "data", "train.csv")
     train_df = pd.read_csv(train_csv_path)
-
-    val_csv_path = os.path.join("..", "src", "data", "val.csv")
-    val_df = pd.read_csv(val_csv_path)
-
-    param_sources = {
-        "model_params": ["dense_units", "dropout_rate"],
-        "training_params": [
-            "batch_size",
-            "learning_rate",
-            "max_class_imbalance_ratio",
-            "use_class_weight",
-            "augment_class",
-        ],
-    }
-
-    if config.training_params.use_hyperparameter_tuning:
-        logging.info("Starting hyperparameter tuning...")
-        best_hyperparameters = tune_training_process(
-            train_df, val_df, config=config, output_dir_path=output_dir_path
-        )
-        current_params = best_hyperparameters
-    else:
-        current_params = {
-            param: getattr(getattr(config, source), param)
-            for source, params in param_sources.items()
-            for param in params
-        }
-
-    for param_name, param_value in current_params.items():
-        globals()[param_name] = param_value
-
-    balanced_train_df = BaldDataset.adjust_class_distribution(
+    train_df = BaldDataset.adjust_class_distribution(
         train_df,
-        max_class_ratio=max_class_imbalance_ratio,
+        max_class_ratio=config.training_params.max_class_imbalance_ratio,
     )
     train_dataset = BaldDataset(
-        balanced_train_df,
-        batch_size=batch_size,
+        train_df,
+        batch_size=config.training_params.batch_size,
         dim=DEFAULT_IMG_SIZE,
         n_channels=N_CHANNELS_RGB,
         shuffle=True,
-        augment_minority_class=augment_class,
+        augment_minority_class=config.training_params.augment_minority_class,
     )
-    logging.info(f"Training dataset initialized with batch size {batch_size}")
 
+    val_csv_path = os.path.join("..", "src", "data", "val.csv")
+    val_df = pd.read_csv(val_csv_path)
     val_dataset = BaldDataset(
         val_df,
-        batch_size=batch_size,
+        batch_size=config.training_params.batch_size,
         dim=DEFAULT_IMG_SIZE,
         n_channels=N_CHANNELS_RGB,
         shuffle=True,
         augment_minority_class=False,
     )
-    logging.info(
-        f"Validation dataset initialized with batch size {batch_size}"
-    )
 
-    logging.info("Building model with predefined hyperparameters...")
-    model = BaldOrNotModel(
-        dense_units=dense_units,
-        dropout_rate=dropout_rate,
-        freeze_backbone=config.model_params.freeze_backbone,
-    )
+    # Tuning step
+    if config.training_params.tune_hyperparameters:
+        logging.info("Tuning hyperparameters...")
+        best_hps = tune_model(train_dataset, val_dataset, config)
+        config.model_params.dense_units = best_hps.get("dense_units")
+        config.model_params.dropout_rate = best_hps.get("dropout_rate")
+        config.training_params.learning_rate = best_hps.get("learning_rate")
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    print(config.model_params.dense_units)
+    print(config.model_params.dropout_rate)
+    print(config.training_params.learning_rate)
+    # Build and compile the model with tuned or predefined hyperparameters
+    model = BaldOrNotModel(**asdict(config.model_params))
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=config.training_params.learning_rate
+    )
     model.compile(
         optimizer=optimizer,
         loss=config.training_params.loss_function,
@@ -131,8 +99,8 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         f"Starting training for {config.training_params.epochs} epochs"
     )
 
-    if use_class_weight:
-        class_weight = get_classes_weights()
+    if config.training_params.use_class_weight:
+        class_weight = BaldDataset.get_classes_weights(train_df)
     else:
         class_weight = None
 

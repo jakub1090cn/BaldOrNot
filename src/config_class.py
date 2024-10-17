@@ -21,11 +21,24 @@ class TrainingParams:
     training_name: str = "training_name"
     max_class_imbalance_ratio: float = 2
     use_class_weight: bool = False
-    augment_class: bool = True
+    augment_minority_class: bool = True
     steps_per_epoch: int | None = None
     validation_steps: int | None = 50
-    use_hyperparameter_tuning: bool = True
-    max_tuning_trials: int = 15
+    use_tuned_hyperparameters: bool = True
+
+
+@dataclass
+class TuningParams:
+    max_tuning_trials: int = 12
+    loss_function: str = "binary_crossentropy"
+    objective: str = "val_f1_score"
+    factor: int = 4
+    max_class_imbalance_ratio: int = 1
+    batch_size: int = 64
+    augment_minority_class: bool = False
+    epochs: int = 5
+    steps_per_epoch: int = 30
+    validation_steps: int = 30
 
 
 @dataclass
@@ -58,6 +71,7 @@ class BaldOrNotConfig:
     training_params: TrainingParams = field(
         default_factory=lambda: TrainingParams()
     )
+    tuning_params: TuningParams = field(default_factory=lambda: TuningParams())
     callbacks: List[Dict[str, Any]] = field(
         default_factory=lambda: [
             Callback(
@@ -85,6 +99,11 @@ class BaldOrNotConfig:
             TrainingParams(**self.training_params)
             if isinstance(self.training_params, dict)
             else self.training_params
+        )
+        self.tuning_params = (
+            TuningParams(**self.tuning_params)
+            if isinstance(self.tuning_params, dict)
+            else self.tuning_params
         )
         self.callbacks = [
             Callback(**params).to_dict()

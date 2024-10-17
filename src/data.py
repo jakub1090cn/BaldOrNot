@@ -10,6 +10,9 @@ from src.config_class import BaldOrNotConfig
 from src.constants import (
     N_CHANNELS_GRAYSCALE,
     N_CHANNELS_RGB,
+    NOT_BALD_LABEL,
+    BALD_LABEL,
+    NUMBER_OF_CLASSES,
 )
 from src.exceptions import BaldOrNotDataError
 
@@ -429,3 +432,15 @@ class BaldDataset(keras.utils.Sequence):
             return adjusted_df.reset_index(drop=True)
         else:
             return df
+
+    @staticmethod
+    def get_classes_weights(df: pd.DataFrame):
+        n_total = len(df)
+        n_not_bald = df["label"].value_counts()[NOT_BALD_LABEL]
+        n_bald = df["label"].value_counts()[BALD_LABEL]
+        not_bald_weight = (1 / n_not_bald) * (n_total / NUMBER_OF_CLASSES)
+        bald_weight = (1 / n_bald) * (n_total / NUMBER_OF_CLASSES)
+        return {
+            str(NOT_BALD_LABEL): not_bald_weight,
+            str(BALD_LABEL): bald_weight,
+        }
