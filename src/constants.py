@@ -8,3 +8,4 @@ N_CHANNELS_RGB = 3
 N_CHANNELS_GRAYSCALE = 1
 DEFAULT_IMG_SIZE = (224, 224)
 LOG_FILE_NAME = "training.log"
+DUMMY_METRICS_FILE_NAME = "dummy_model_on_val_metrics_report.txt"

@@ -1,33 +1,37 @@
-import numpy as np
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-)
+import tensorflow as tf
+from abc import ABC, abstractmethod
 
 
-def dummy_always_bald(val_data):
-    return np.ones(len(val_data), dtype=int)
+class DummyModel(tf.keras.Model, ABC):
+    def __init__(self):
+        super(DummyModel, self).__init__()
+
+    @abstractmethod
+    def call(self, inputs):
+        pass
 
 
-def dummy_always_non_bald(val_data):
-    return np.zeros(len(val_data), dtype=int)
+class AlwaysBaldModel(DummyModel):
+    def __init__(self):
+        super(AlwaysBaldModel, self).__init__()
+
+    def call(self, inputs):
+        return tf.ones_like(inputs[:, 0], dtype=tf.int32)
 
 
-def dummy_random(val_data):
-    return np.random.randint(2, size=len(val_data))
+class AlwaysNotBaldModel(DummyModel):
+    def __init__(self):
+        super(AlwaysNotBaldModel, self).__init__()
+
+    def call(self, inputs):
+        return tf.zeros_like(inputs[:, 0], dtype=tf.int32)
 
 
-def evaluate_dummy_model(predictions, true_labels):
-    accuracy = accuracy_score(true_labels, predictions)
-    precision = precision_score(true_labels, predictions)
-    recall = recall_score(true_labels, predictions)
-    f1 = f1_score(true_labels, predictions)
+class RandomModel(DummyModel):
+    def __init__(self):
+        super(RandomModel, self).__init__()
 
-    return {
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1,
-    }
+    def call(self, inputs):
+        return tf.random.uniform(
+            shape=(tf.shape(inputs)[0],), minval=0, maxval=2, dtype=tf.int32
+        )

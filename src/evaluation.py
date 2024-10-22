@@ -68,9 +68,9 @@ def get_metrics(
             - conf_matrix: Confusion matrix.
     """
     accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average="weighted")
-    recall = recall_score(y_true, y_pred, average="weighted")
-    f1 = f1_score(y_true, y_pred, average="weighted")
+    precision = precision_score(y_true, y_pred, average="binary")
+    recall = recall_score(y_true, y_pred, average="binary")
+    f1 = f1_score(y_true, y_pred, average="binary")
     conf_matrix = confusion_matrix(y_true, y_pred)
 
     return {
