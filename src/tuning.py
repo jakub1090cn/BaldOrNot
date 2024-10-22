@@ -20,7 +20,7 @@ def model_builder(hp, config):
     """
     hp_dense_units = hp.Choice("dense_units", values=[128, 256, 512])
     hp_dropout_rate = hp.Float(
-        "dropout_rate", min_value=0.1, max_value=0.7, step=0.2
+        "dropout_rate", min_value=0.2, max_value=0.7, step=0.1
     )
     hp_learning_rate = hp.Choice("learning_rate", values=[1e-2, 1e-3, 1e-4])
 
@@ -58,7 +58,7 @@ def tune_model(train_dataset, val_dataset, config: BaldOrNotConfig):
         max_epochs=config.tuning_params.epochs,  # Max epochs for Hyperband
         factor=config.tuning_params.factor,  # Factor controlling resource allocation reduction per round
         directory=os.path.join("..", "tuning_logs"),
-        project_name="hyperband_tuning",
+        project_name=f"hyperband_tuning_{config.tuning_params.steps_per_epoch}",
     )
 
     tuner.search(

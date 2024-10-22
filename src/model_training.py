@@ -11,7 +11,6 @@ from src.data import BaldDataset
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
 from src.metrics import get_metrics
-from src.tuning import tune_model
 from src.constants import (
     DEFAULT_IMG_SIZE,
     N_CHANNELS_RGB,
@@ -26,7 +25,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     """
     logging.info("Starting model training...")
 
-    # Initialize datasets
     train_csv_path = os.path.join("..", "src", "data", "train.csv")
     train_df = pd.read_csv(train_csv_path)
     train_df = BaldDataset.adjust_class_distribution(
@@ -53,18 +51,9 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         augment_minority_class=False,
     )
 
-    # Tuning step
-    if config.training_params.tune_hyperparameters:
-        logging.info("Tuning hyperparameters...")
-        best_hps = tune_model(train_dataset, val_dataset, config)
-        config.model_params.dense_units = best_hps.get("dense_units")
-        config.model_params.dropout_rate = best_hps.get("dropout_rate")
-        config.training_params.learning_rate = best_hps.get("learning_rate")
+    if config.training_params.use_tuned_hyperparameters:
+        pass
 
-    print(config.model_params.dense_units)
-    print(config.model_params.dropout_rate)
-    print(config.training_params.learning_rate)
-    # Build and compile the model with tuned or predefined hyperparameters
     model = BaldOrNotModel(**asdict(config.model_params))
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=config.training_params.learning_rate
@@ -75,7 +64,6 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         metrics=get_metrics(config.metrics),
     )
 
-    # Initialize callbacks
     tf_callbacks = []
     for callback_dict in config.callbacks:
         if callback_dict["type"] == "EarlyStopping":
