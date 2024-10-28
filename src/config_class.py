@@ -81,3 +81,38 @@ class BaldOrNotConfig:
         self.paths = (
             Paths(**self.paths) if isinstance(self.paths, dict) else self.paths
         )
+
+
+@dataclass
+class GoogleApiData:
+    api_key: str = ""
+    cse_id: str = ""
+
+
+@dataclass
+class DownloadParams:
+    query: str = "bald or not"
+    num_images: int = 10
+    download_path: str = ""
+
+
+@dataclass
+class GoogleApiConfig:
+    google_api_data: GoogleApiData = field(
+        default_factory=lambda: GoogleApiData()
+    )
+    download_params: DownloadParams = field(
+        default_factory=lambda: DownloadParams()
+    )
+
+    def __post_init__(self):
+        self.google_api_data = (
+            GoogleApiData(**self.google_api_data)
+            if isinstance(self.google_api_data, dict)
+            else self.google_api_data
+        )
+        self.download_params = (
+            DownloadParams(**self.download_params)
+            if isinstance(self.download_params, dict)
+            else self.download_params
+        )
