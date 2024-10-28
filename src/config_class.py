@@ -1,7 +1,6 @@
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List
-import tensorflow as tf
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -10,36 +9,44 @@ class ModelParams:
     freeze_backbone: bool = True
     dropout_rate: float = 0.6
     saved_model_name = "model.keras"
+    dummy_models_report_filename_sufix: str = "_dummy"
 
 
 @dataclass
-class TrainingParams:
-    epochs: int = 30
-    batch_size: int = 64
+class LearningParams:
+    epochs: int = 3
+    batch_size: int = 10
+    loss_function: str = "binary_crossentropy"
+    max_class_imbalance_ratio: int = 1
+    steps_per_epoch: Optional[int] = 10
+    validation_steps: Optional[int] = 10
+    augment_minority_class: bool = False
+    metrics_report_filename: str = "metrics_report.txt"
+
+
+@dataclass
+class TrainingParams(LearningParams):
     learning_rate: float = 0.0001
     optimizer: str = "adam"
-    loss_function: str = "binary_crossentropy"
     training_name: str = "training_name"
-    max_class_imbalance_ratio: float = 2
-    use_class_weight: bool = True
-    augment_minority_class: bool = False
-    steps_per_epoch: int | None = None
-    validation_steps: int | None = None
+    use_class_weight: bool = False
     use_tuned_hyperparameters: bool = False
 
 
 @dataclass
-class TuningParams:
-    max_tuning_trials: int = 30
-    loss_function: str = "binary_crossentropy"
-    objective: str = "val_f1_score"
+class TuningParams(LearningParams):
+    max_tuning_trials: int = 3
+    objective: str = "val_f1_score"  # The metric to be optimized during tuning
     factor: int = 3
-    max_class_imbalance_ratio: int = 1
-    batch_size: int = 64
-    augment_minority_class: bool = False
-    epochs: int = 7
-    steps_per_epoch: int = 50
-    validation_steps: int = 50
+    hp_dense_units_values: List[int] = field(
+        default_factory=lambda: [128, 256, 512]
+    )
+    hp_dropout_rate_min_value: float = 0.2
+    hp_dropout_rate_max_value: float = 0.7
+    hp_dropout_rate_step: float = 0.1
+    hp_learning_rate_values: List[float] = field(
+        default_factory=lambda: [1e-2, 1e-3, 1e-4]
+    )
 
 
 @dataclass
@@ -60,14 +67,15 @@ class Paths:
     labels_ds_path = (
         "C:\\Users\\Admin\\Downloads\\archive (3)\\" "list_attr_celeba.csv"
     )
+    train_csv_path = os.path.join("..", "src", "data", "train.csv")
+    val_csv_path = os.path.join("..", "src", "data", "val.csv")
+    test_csv_path = os.path.join("..", "src", "data", "test.csv")
+    config_yaml_path = os.path.join("..", "config.yaml")
+    results_dir = os.path.join("..", "results")
     images_dir = (
         "C:\\Users\\Admin\\Downloads\\archive (3)\\"
         "img_align_celeba\\img_align_celeba"
     )
-    train_csv_path = os.path.join("..", "src", "data", "train.csv")
-    val_csv_path = os.path.join("..", "src", "data", "val.csv")
-    test_csv_path = os.path.join("..", "src", "data", "test.csv")
-    results_dir = os.path.join("..", "results")
 
 
 @dataclass

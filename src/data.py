@@ -441,6 +441,6 @@ class BaldDataset(keras.utils.Sequence):
         not_bald_weight = (1 / n_not_bald) * (n_total / NUMBER_OF_CLASSES)
         bald_weight = (1 / n_bald) * (n_total / NUMBER_OF_CLASSES)
         return {
-            str(NOT_BALD_LABEL): not_bald_weight,
-            str(BALD_LABEL): bald_weight,
+            NOT_BALD_LABEL: not_bald_weight,
+            BALD_LABEL: bald_weight,
         }

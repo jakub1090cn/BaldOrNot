@@ -27,8 +27,7 @@ train_df, val_df, test_df = BaldDataset.create_subset_dfs(corrected_labels_df)
 
 
 data_dir = os.path.join("..", "src", "data")
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
+os.makedirs(data_dir, exist_ok=True)
 
 train_df.to_csv(os.path.join(data_dir, "train.csv"), index=False)
 val_df.to_csv(os.path.join(data_dir, "val.csv"), index=False)
