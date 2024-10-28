@@ -25,7 +25,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     """
     logging.info("Starting model training...")
 
-    train_csv_path = os.path.join("..", "src", "data", "train.csv")
+    train_csv_path = config.paths.train_csv_path
     train_df = pd.read_csv(train_csv_path)
     train_df = BaldDataset.adjust_class_distribution(
         train_df,
@@ -40,7 +40,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         augment_minority_class=config.training_params.augment_minority_class,
     )
 
-    val_csv_path = os.path.join("..", "src", "data", "val.csv")
+    val_csv_path = config.paths.val_csv_path
     val_df = pd.read_csv(val_csv_path)
     val_dataset = BaldDataset(
         val_df,

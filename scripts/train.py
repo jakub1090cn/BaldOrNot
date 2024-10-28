@@ -11,6 +11,7 @@ from src.model_training import train_model
 from src.output import init_output_dir
 from src.plot import plot_metric_curve
 from src.setup_logging import setup_logging
+from utils import save_metrics_report
 
 
 def run_experiment(config: BaldOrNotConfig):
@@ -38,7 +39,17 @@ def run_experiment(config: BaldOrNotConfig):
         "Model training completed. History of training:\n"
         f"{json.dumps(history.history, indent=4)}"
     )
-
+    metrics_report = {
+        "Model": {
+            metric: history.history[metric][-1] for metric in history.history
+        }
+    }
+    save_metrics_report(
+        metrics_report=metrics_report,
+        output_dir=output_dir_path,
+        config=config,
+        filename_sufix=config.training_params.dummy_models_report_filename_sufix,
+    )
     for metric in ["loss", "accuracy", "precision", "recall", "f1_score"]:
         if metric in history.history:
             logging.info(f"Plotting metric curve for {metric}...")

@@ -2,6 +2,7 @@
 import functools
 import os
 
+from config_class import BaldOrNotConfig
 from src.constants import LOG_FILE_NAME
 
 
@@ -26,3 +27,37 @@ def check_log_exists(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+import os
+import numpy as np
+
+
+def save_metrics_report(
+    metrics_report: dict,
+    output_dir: str,
+    config: BaldOrNotConfig,
+    filename_prefix: str = "",
+):
+    """
+    Saves the provided metrics report to a specified file.
+
+    Args:
+        metrics_report (dict): Dictionary containing metrics for models.
+        output_dir (str): Directory where the file will be saved.
+        :param filename_prefix:
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    filename = filename_prefix + config.training_params.metrics_report_filename
+    output_file = os.path.join(output_dir, filename)
+
+    with open(output_file, "w") as report_file:
+        report_file.write("Metrics Report:\n\n")
+        for model_name, metrics in metrics_report.items():
+            report_file.write(f"Metrics for '{model_name}':\n")
+            for metric, value in metrics.items():
+                if isinstance(value, np.ndarray):
+                    report_file.write(f"{metric}:\n{value}\n")
+                else:
+                    report_file.write(f"{metric}: {value:.4f}\n")
+            report_file.write("\n")

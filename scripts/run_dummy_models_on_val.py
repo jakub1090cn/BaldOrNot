@@ -1,11 +1,11 @@
 import pandas as pd
 import os
-import numpy as np
 
-from constants import DUMMY_METRICS_FILE_NAME
+from constants import DUMMY_METRICS_FILE_NAME_PREFIX
 from src.dummy_models import AlwaysBaldModel, AlwaysNotBaldModel, RandomModel
 from src.evaluation import get_metrics
 from src.config_class import BaldOrNotConfig
+from utils import save_metrics_report
 
 
 def main():
@@ -46,22 +46,14 @@ def main():
     # Set up output directory and file
     output_dir = config.paths.results_dir
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, DUMMY_METRICS_FILE_NAME)
 
     # Write metrics to the file
-    with open(output_file, "w") as report_file:
-        report_file.write("Metrics for Dummy Models on Validation Data:\n\n")
-
-        for model_name, metrics in metrics_report.items():
-            report_file.write(f"Metrics for '{model_name}' Dummy Model:\n")
-            for metric, value in metrics.items():
-                if isinstance(value, np.ndarray):
-                    report_file.write(f"{metric}:\n{value}\n")
-                else:
-                    report_file.write(f"{metric}: {value:.4f}\n")
-            report_file.write("\n")
-
-    print(f"Report saved to {output_file}")
+    save_metrics_report(
+        metrics_report=metrics_report,
+        output_dir=output_dir,
+        config=config,
+        filename_prefix=DUMMY_METRICS_FILE_NAME_PREFIX,
+    )
 
 
 if __name__ == "__main__":
