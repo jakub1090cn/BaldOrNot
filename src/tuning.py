@@ -1,4 +1,6 @@
 import os
+import yaml
+from functools import partial
 
 import keras_tuner as kt
 from tensorflow import keras
@@ -18,11 +20,19 @@ def model_builder(hp, config):
     Returns:
         A compiled Keras model.
     """
-    hp_dense_units = hp.Choice("dense_units", values=[128, 256, 512])
-    hp_dropout_rate = hp.Float(
-        "dropout_rate", min_value=0.2, max_value=0.7, step=0.1
+    params = config.tuning_params
+    hp_dense_units = hp.Choice(
+        "dense_units", values=params.hp_dense_units_values
     )
-    hp_learning_rate = hp.Choice("learning_rate", values=[1e-2, 1e-3, 1e-4])
+    hp_dropout_rate = hp.Float(
+        "dropout_rate",
+        min_value=params.hp_dropout_rate_min_value,
+        max_value=params.hp_dropout_rate_max_value,
+        step=params.hp_dropout_rate_step,
+    )
+    hp_learning_rate = hp.Choice(
+        "learning_rate", values=params.hp_learning_rate_values
+    )
 
     model = BaldOrNotModel(
         dense_units=hp_dense_units,
@@ -53,7 +63,7 @@ def tune_model(train_dataset, val_dataset, config: BaldOrNotConfig):
         The best hyperparameters found during tuning.
     """
     tuner = kt.Hyperband(
-        lambda hp: model_builder(hp, config),
+        partial(model_builder, config=config),
         objective=config.tuning_params.objective,
         max_epochs=config.tuning_params.epochs,  # Max epochs for Hyperband
         factor=config.tuning_params.factor,  # Factor controlling resource allocation reduction per round
@@ -73,3 +83,24 @@ def tune_model(train_dataset, val_dataset, config: BaldOrNotConfig):
     best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
     return best_hps
+
+
+def update_config_with_best_hps(best_hps, config_file_path):
+    """
+    Updates the YAML configuration file with the best hyperparameters found.
+
+    Args:
+        best_hps: Best hyperparameters found by the tuner.
+        config_file_path (str): Path to the configuration file to save the updated values.
+    """
+    with open(config_file_path, "r") as file:
+        config_data = yaml.safe_load(file)
+
+    config_data["model_params"]["dropout_rate"] = best_hps.get("dropout_rate")
+    config_data["model_params"]["dense_units"] = best_hps.get("dense_units")
+    config_data["training_params"]["learning_rate"] = best_hps.get(
+        "learning_rate"
+    )
+
+    with open(config_file_path, "w") as file:
+        yaml.dump(config_data, file)
