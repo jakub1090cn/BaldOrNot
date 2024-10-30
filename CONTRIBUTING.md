@@ -14,7 +14,7 @@
 
 ## Python Version
 
-This project requires Python version 3.11.0. Ensure you have the correct version installed by running:
+This project requires Python version 3.12. Ensure you have the correct version installed by running:
 
 ```sh
 python --version

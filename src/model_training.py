@@ -7,24 +7,25 @@ import pandas as pd
 import tensorflow as tf
 
 from src.config_class import BaldOrNotConfig
+from src.constants import DEFAULT_IMG_SIZE, N_CHANNELS_RGB
 from src.data import BaldDataset
+from src.metrics import get_metrics
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
-from src.metrics import get_metrics
-from src.constants import (
-    DEFAULT_IMG_SIZE,
-    N_CHANNELS_RGB,
-)
 
 
 @check_log_exists
 def train_model(config: BaldOrNotConfig, output_dir_path: str):
     """
-    Trains the BaldOrNot model using the specified configuration, with optional
-    hyperparameter tuning using Keras Tuner.
+    Trains the BaldOrNot model using the specified configuration.
+
+    Args:
+        config: Configuration object with model, training, and path settings.
+        output_dir_path: Path to the directory where logs and model will be saved.
     """
     logging.info("Starting model training...")
 
+    # Load and prepare training dataset
     train_csv_path = config.paths.train_csv_path
     train_df = pd.read_csv(train_csv_path)
     train_df = BaldDataset.adjust_class_distribution(
@@ -40,6 +41,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         augment_minority_class=config.training_params.augment_minority_class,
     )
 
+    # Load and prepare validation dataset
     val_csv_path = config.paths.val_csv_path
     val_df = pd.read_csv(val_csv_path)
     val_dataset = BaldDataset(
@@ -51,9 +53,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         augment_minority_class=False,
     )
 
-    if config.training_params.use_tuned_hyperparameters:
-        pass
-
+    # Initialize and compile the model
     model = BaldOrNotModel(**asdict(config.model_params))
     optimizer = tf.keras.optimizers.Adam(
         learning_rate=config.training_params.learning_rate
@@ -64,6 +64,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         metrics=get_metrics(config.metrics),
     )
 
+    # Set up callbacks
     tf_callbacks = []
     for callback_dict in config.callbacks:
         if callback_dict["type"] == "EarlyStopping":
@@ -87,11 +88,14 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
         f"Starting training for {config.training_params.epochs} epochs"
     )
 
-    if config.training_params.use_class_weight:
-        class_weight = BaldDataset.get_classes_weights(train_df)
-    else:
-        class_weight = None
+    # Class weights configuration
+    class_weight = (
+        BaldDataset.get_classes_weights(train_df)
+        if config.training_params.use_class_weight
+        else None
+    )
 
+    # Train the model
     history = model.fit(
         train_dataset,
         epochs=config.training_params.epochs,
@@ -104,6 +108,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
 
     logging.info("Model training completed")
 
+    # Save the trained model
     model_path = os.path.join(
         output_dir_path, config.model_params.saved_model_name
     )
@@ -114,6 +119,15 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
 
 
 def init_output_dir(training_name: str) -> str:
+    """
+    Initializes the output directory for training logs and model files.
+
+    Args:
+        training_name: Base name for the training output directory.
+
+    Returns:
+        Path to the created output directory.
+    """
     project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     current_training = f"{training_name}{current_date}"

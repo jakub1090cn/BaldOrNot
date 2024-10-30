@@ -11,14 +11,14 @@ from src.model import BaldOrNotModel
 
 def model_builder(hp, config):
     """
-    Builds the model for hyperparameter tuning.
+    Builds and compiles a model for hyperparameter tuning.
 
     Args:
         hp: Hyperparameter object for Keras Tuner.
-        config: Configuration object containing the model parameters.
+        config: Configuration object with model parameters.
 
     Returns:
-        A compiled Keras model.
+        Compiled Keras model.
     """
     params = config.tuning_params
     hp_dense_units = hp.Choice(
@@ -39,14 +39,12 @@ def model_builder(hp, config):
         dropout_rate=hp_dropout_rate,
         freeze_backbone=config.model_params.freeze_backbone,
     )
-
     optimizer = keras.optimizers.Adam(learning_rate=hp_learning_rate)
     model.compile(
         optimizer=optimizer,
-        loss=config.tuning_params.loss_function,
+        loss=params.loss_function,
         metrics=get_metrics(config.metrics),
     )
-
     return model
 
 
@@ -57,31 +55,31 @@ def tune_model(train_dataset, val_dataset, config: BaldOrNotConfig):
     Args:
         train_dataset: Training dataset.
         val_dataset: Validation dataset.
-        config (BaldOrNotConfig): Configuration object containing the training parameters.
+        config: Configuration object with training parameters.
 
     Returns:
-        The best hyperparameters found during tuning.
+        Best hyperparameters found during tuning.
     """
+    params = config.tuning_params
     tuner = kt.Hyperband(
         partial(model_builder, config=config),
-        objective=config.tuning_params.objective,
-        max_epochs=config.tuning_params.epochs,  # Max epochs for Hyperband
-        factor=config.tuning_params.factor,  # Factor controlling resource allocation reduction per round
+        objective=params.objective,
+        max_epochs=params.epochs,
+        factor=params.factor,
         directory=os.path.join("..", "tuning_logs"),
-        project_name=f"hyperband_tuning_{config.tuning_params.steps_per_epoch}",
+        project_name=f"hyperband_tuning_{params.steps_per_epoch}",
     )
 
     tuner.search(
         train_dataset,
         validation_data=val_dataset,
-        epochs=config.tuning_params.epochs,
-        steps_per_epoch=config.tuning_params.steps_per_epoch,
-        validation_steps=config.tuning_params.validation_steps,
+        epochs=params.epochs,
+        steps_per_epoch=params.steps_per_epoch,
+        validation_steps=params.validation_steps,
+        class_weight=params.use_class_weight,
     )
 
-    # Retrieve the best hyperparameters
     best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-
     return best_hps
 
 
@@ -91,7 +89,7 @@ def update_config_with_best_hps(best_hps, config_file_path):
 
     Args:
         best_hps: Best hyperparameters found by the tuner.
-        config_file_path (str): Path to the configuration file to save the updated values.
+        config_file_path: Path to the configuration file for saving updated values.
     """
     with open(config_file_path, "r") as file:
         config_data = yaml.safe_load(file)

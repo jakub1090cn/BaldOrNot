@@ -24,7 +24,7 @@ def main():
         dim=DEFAULT_IMG_SIZE,
         n_channels=N_CHANNELS_RGB,
         shuffle=True,
-        augment_minority_class=params.augment_minority_class,
+        augment_minority_class=params.use_class_weight,
     )
 
     val_csv_path = config.paths.val_csv_path

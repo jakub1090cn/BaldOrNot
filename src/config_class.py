@@ -1,6 +1,6 @@
 import os
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -9,42 +9,44 @@ class ModelParams:
     freeze_backbone: bool = True
     dropout_rate: float = 0.6
     saved_model_name = "model.keras"
-    dummy_models_report_filename_sufix: str = "_dummy"
 
 
 @dataclass
-class LearningParams:
-    epochs: int = 3
-    batch_size: int = 10
+class TrainingParams:
+    epochs: int = 30
+    batch_size: int = 64
     loss_function: str = "binary_crossentropy"
-    max_class_imbalance_ratio: int = 1
-    steps_per_epoch: Optional[int] = 10
-    validation_steps: Optional[int] = 10
-    augment_minority_class: bool = False
+    max_class_imbalance_ratio: int = 3
+    steps_per_epoch: int | None = None
+    validation_steps: int | None = None
+    use_class_weight: bool = True
+    augment_minority_class: bool = True
+    learning_rate: float = 0.0001
+    optimizer: str = "adam"
+    training_name: str = "training_name"
     metrics_report_filename: str = "metrics_report.txt"
 
 
 @dataclass
-class TrainingParams(LearningParams):
-    learning_rate: float = 0.0001
-    optimizer: str = "adam"
-    training_name: str = "training_name"
+class TuningParams:
+    epochs: int = 2
+    batch_size: int = 128
+    loss_function: str = "binary_crossentropy"
+    max_class_imbalance_ratio: int = 1
+    steps_per_epoch: int | None = 5
+    validation_steps: int | None = 5
     use_class_weight: bool = False
-    use_tuned_hyperparameters: bool = False
-
-
-@dataclass
-class TuningParams(LearningParams):
-    max_tuning_trials: int = 3
+    augment_minority_class: bool = False
+    max_tuning_trials: int = 2
     objective: str = "val_f1_score"  # The metric to be optimized during tuning
     factor: int = 3
-    hp_dense_units_values: List[int] = field(
+    hp_dense_units_values: list[int] = field(
         default_factory=lambda: [128, 256, 512]
     )
     hp_dropout_rate_min_value: float = 0.2
     hp_dropout_rate_max_value: float = 0.7
     hp_dropout_rate_step: float = 0.1
-    hp_learning_rate_values: List[float] = field(
+    hp_learning_rate_values: list[float] = field(
         default_factory=lambda: [1e-2, 1e-3, 1e-4]
     )
 
@@ -52,7 +54,7 @@ class TuningParams(LearningParams):
 @dataclass
 class Callback:
     type: str
-    args: Dict[str, any] = field(default_factory=dict)
+    args: dict[str, any] = field(default_factory=dict)
 
     def to_dict(self):
         """Convert the Callback to a dictionary format."""
@@ -85,7 +87,7 @@ class BaldOrNotConfig:
         default_factory=lambda: TrainingParams()
     )
     tuning_params: TuningParams = field(default_factory=lambda: TuningParams())
-    callbacks: List[Dict[str, Any]] = field(
+    callbacks: list[dict[str, Any]] = field(
         default_factory=lambda: [
             Callback(
                 type="EarlyStopping",
@@ -97,7 +99,7 @@ class BaldOrNotConfig:
             ).to_dict(),
         ]
     )
-    metrics: List[str] = field(
+    metrics: list[str] = field(
         default_factory=lambda: ["accuracy", "precision", "recall", "f1_score"]
     )
     paths: Paths = field(default_factory=lambda: Paths())

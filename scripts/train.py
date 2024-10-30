@@ -48,7 +48,6 @@ def run_experiment(config: BaldOrNotConfig):
         metrics_report=metrics_report,
         output_dir=output_dir_path,
         config=config,
-        filename_sufix=config.training_params.dummy_models_report_filename_sufix,
     )
     for metric in ["loss", "accuracy", "precision", "recall", "f1_score"]:
         if metric in history.history:

@@ -3,7 +3,7 @@ import tensorflow as tf
 
 class F1Score(tf.keras.metrics.Metric):
     def __init__(self, name="f1_score", **kwargs):
-        super(F1Score, self).__init__(name=name, **kwargs)
+        super().__init__(name=name, **kwargs)
         self.precision = tf.keras.metrics.Precision()
         self.recall = tf.keras.metrics.Recall()
 
@@ -25,6 +25,15 @@ class F1Score(tf.keras.metrics.Metric):
 
 
 def get_metrics(metrics_list):
+    """
+    Returns a list of metrics based on the provided names in metrics_list.
+
+    Args:
+        metrics_list: List of metric names as strings.
+
+    Returns:
+        List of metric instances for evaluation.
+    """
     metrics_mapping = {
         "accuracy": tf.keras.metrics.BinaryAccuracy(name="accuracy"),
         "precision": tf.keras.metrics.Precision(name="precision"),
@@ -37,10 +46,8 @@ def get_metrics(metrics_list):
         if metric in metrics_mapping
     ]
 
-    required_for_f1 = ["precision", "recall"]
-
     if "f1_score" in metrics_list:
-        for metric in required_for_f1:
+        for metric in ["precision", "recall"]:
             if metric not in metrics_list:
                 metrics.append(metrics_mapping[metric])
 
