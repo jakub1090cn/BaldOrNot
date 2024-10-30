@@ -77,7 +77,11 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
             )
         elif callback_dict["type"] == "TensorBoard":
             tf_callbacks.append(
-                tf.keras.callbacks.TensorBoard(**callback_dict["args"])
+                # tf.keras.callbacks.TensorBoard(**callback_dict["args"])
+                tf.keras.callbacks.TensorBoard(
+                    log_dir=os.path.join(output_dir_path, "logs"),
+                    histogram_freq=1
+                )
             )
             logging.info(
                 f"TensorBoard callback added with parameters: "
