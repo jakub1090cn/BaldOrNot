@@ -8,9 +8,12 @@ from jsonargparse import CLI
 from src.config_class import GoogleApiConfig
 
 
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
+def load_face_cascade() -> cv2.CascadeClassifier:
+    """Loads Haar Cascade classifier to detect face."""
+    face_cascade_path = (
+        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    )
+    return cv2.CascadeClassifier(face_cascade_path)
 
 
 def get_image_urls(api_key, cse_id, query, num_images):
@@ -100,6 +103,8 @@ if __name__ == "__main__":
     query = config.download_params.query
     download_path = config.download_params.download_path
     num_images = config.download_params.num_images
+
+    face_cascade = load_face_cascade()
 
     print(f"Searching for '{query}' on Google...")
     image_urls = get_image_urls(api_key, cse_id, query, num_images)
