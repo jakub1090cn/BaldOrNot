@@ -16,18 +16,20 @@ def load_face_cascade() -> cv2.CascadeClassifier:
     return cv2.CascadeClassifier(face_cascade_path)
 
 
-def get_image_urls(api_key, cse_id, query, num_images):
-    service = build("customsearch", "v1", developerKey=api_key)
+def get_image_urls(config: GoogleApiConfig):
+    service = build(
+        "customsearch", "v1", developerKey=config.google_api_data.api_key
+    )
     image_urls = []
 
-    for start in range(1, num_images + 1, 10):
+    for start in range(1, config.search_params.num_images + 1, 10):
         res = (
             service.cse()
             .list(
-                q=query,
-                cx=cse_id,
+                q=config.search_params.query,
+                cx=config.google_api_data.cse_id,
                 searchType="image",
-                num=min(10, num_images - len(image_urls)),
+                num=min(10, config.search_params.num_images - len(image_urls)),
                 start=start,
             )
             .execute()
@@ -42,10 +44,12 @@ def get_image_urls(api_key, cse_id, query, num_images):
     return image_urls
 
 
-def detect_faces(image, min_face_area_ratio, scale_factor, min_neighbors):
+def detect_faces(image, config: GoogleApiConfig):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(
-        gray_image, scaleFactor=scale_factor, minNeighbors=min_neighbors
+        gray_image,
+        scaleFactor=config.face_detection_params.scale_factor,
+        minNeighbors=config.face_detection_params.min_neighbors,
     )
 
     img_height, img_width = gray_image.shape
@@ -57,18 +61,18 @@ def detect_faces(image, min_face_area_ratio, scale_factor, min_neighbors):
         face_area = w * h
         face_area_ratio = face_area / img_area
 
-        if face_area_ratio >= min_face_area_ratio:
+        if face_area_ratio >= config.face_detection_params.min_face_area_ratio:
             valid_faces.append((x, y, w, h))
 
     return valid_faces
 
 
-def download_images(image_urls, download_path):
+def download_images(image_urls, download_config: GoogleApiConfig):
+    download_path = download_config.download_params.download_path
     if not os.path.exists(download_path):
         os.makedirs(download_path)
 
     for i, url in enumerate(image_urls):
-        config = CLI(GoogleApiConfig)
         try:
             print(f"Downloading {url}")
             response = requests.get(url, stream=True)
@@ -78,7 +82,7 @@ def download_images(image_urls, download_path):
             image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
 
             if image is not None:
-                faces = detect_faces(image, **config)
+                faces = detect_faces(image, config)
 
                 if len(faces) == 1:
                     image_filename = os.path.join(
@@ -98,17 +102,10 @@ def download_images(image_urls, download_path):
 if __name__ == "__main__":
     config = CLI(GoogleApiConfig)
 
-    api_key = config.google_api_data.api_key
-    cse_id = config.google_api_data.cse_id
-
-    query = config.download_params.query
-    download_path = config.download_params.download_path
-    num_images = config.download_params.num_images
-
     face_cascade = load_face_cascade()
 
-    print(f"Searching for '{query}' on Google...")
-    image_urls = get_image_urls(api_key, cse_id, query, num_images)
+    print(f"Searching for '{config.search_params.query}' on Google...")
+    image_urls = get_image_urls(config)
     print(f"Found {len(image_urls)} images.")
-    download_images(image_urls, download_path)
+    download_images(image_urls, config)
     print("Download complete.")

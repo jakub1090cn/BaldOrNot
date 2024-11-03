@@ -90,9 +90,13 @@ class GoogleApiData:
 
 
 @dataclass
-class DownloadParams:
+class SearchParams:
     query: str = "bald or not"
     num_images: int = 10
+
+
+@dataclass
+class DownloadParams:
     download_path: str = (
         r"C:\Users\user\Projekty\BaldOrNot\scrapping\downloaded_images"
     )
@@ -110,6 +114,7 @@ class GoogleApiConfig:
     google_api_data: GoogleApiData = field(
         default_factory=lambda: GoogleApiData()
     )
+    search_params: SearchParams = field(default_factory=lambda: SearchParams())
     download_params: DownloadParams = field(
         default_factory=lambda: DownloadParams()
     )
@@ -122,6 +127,11 @@ class GoogleApiConfig:
             GoogleApiData(**self.google_api_data)
             if isinstance(self.google_api_data, dict)
             else self.google_api_data
+        )
+        self.search_params = (
+            SearchParams(**self.search_params)
+            if isinstance(self.search_params, dict)
+            else self.search_params
         )
         self.download_params = (
             DownloadParams(**self.download_params)
