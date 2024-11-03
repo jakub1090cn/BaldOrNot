@@ -93,7 +93,16 @@ class GoogleApiData:
 class DownloadParams:
     query: str = "bald or not"
     num_images: int = 10
-    download_path: str = ""
+    download_path: str = (
+        r"C:\Users\user\Projekty\BaldOrNot\scrapping\downloaded_images"
+    )
+
+
+@dataclass
+class FaceDetectionParams:
+    min_face_area_ratio: float = 0.1
+    scale_factor: float = 1.02
+    min_neighbors: int = 5
 
 
 @dataclass
@@ -103,6 +112,9 @@ class GoogleApiConfig:
     )
     download_params: DownloadParams = field(
         default_factory=lambda: DownloadParams()
+    )
+    face_detection_params: FaceDetectionParams = field(
+        default_factory=lambda: FaceDetectionParams()
     )
 
     def __post_init__(self):
@@ -115,4 +127,9 @@ class GoogleApiConfig:
             DownloadParams(**self.download_params)
             if isinstance(self.download_params, dict)
             else self.download_params
+        )
+        self.face_detection_params = (
+            FaceDetectionParams(**self.face_detection_params)
+            if isinstance(self.face_detection_params, dict)
+            else self.face_detection_params
         )

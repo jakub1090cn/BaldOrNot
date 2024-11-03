@@ -42,10 +42,10 @@ def get_image_urls(api_key, cse_id, query, num_images):
     return image_urls
 
 
-def detect_faces(image, min_face_area_ratio=0.1):
+def detect_faces(image, min_face_area_ratio, scale_factor, min_neighbors):
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(
-        gray_image, scaleFactor=1.02, minNeighbors=5
+        gray_image, scaleFactor=scale_factor, minNeighbors=min_neighbors
     )
 
     img_height, img_width = gray_image.shape
@@ -68,6 +68,7 @@ def download_images(image_urls, download_path):
         os.makedirs(download_path)
 
     for i, url in enumerate(image_urls):
+        config = CLI(GoogleApiConfig)
         try:
             print(f"Downloading {url}")
             response = requests.get(url, stream=True)
@@ -77,7 +78,7 @@ def download_images(image_urls, download_path):
             image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
 
             if image is not None:
-                faces = detect_faces(image)
+                faces = detect_faces(image, **config)
 
                 if len(faces) == 1:
                     image_filename = os.path.join(
