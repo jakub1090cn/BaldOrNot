@@ -69,8 +69,8 @@ def detect_faces(image, config: GoogleApiConfig):
 
 def download_images(image_urls, download_config: GoogleApiConfig):
     download_path = download_config.download_params.download_path
-    if not os.path.exists(download_path):
-        os.makedirs(download_path)
+
+    os.makedirs(download_path, exist_ok=True)
 
     for i, url in enumerate(image_urls):
         try:
