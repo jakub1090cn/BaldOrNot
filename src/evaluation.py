@@ -15,7 +15,7 @@ from sklearn.metrics import (
 
 import setup_logging
 from src.constants import BALD_LABELS
-from src.data import BaldDataset
+from src.dataset import BaldDataset
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
 

@@ -1,6 +1,7 @@
 import pandas as pd
 
-from src.data import check_sample_images, prepare_merged_dataframe
+from data_utils import prepare_merged_dataframe
+from src.dataset import check_sample_images
 
 
 def test_check_sample_images(monkeypatch):
@@ -74,4 +75,3 @@ def test_prepare_merged_dataframe(mocker):
     result_df = prepare_merged_dataframe(subsets_path, labels_path)
 
     pd.testing.assert_frame_equal(result_df, expected_df)
-

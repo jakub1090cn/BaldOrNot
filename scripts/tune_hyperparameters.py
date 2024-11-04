@@ -1,9 +1,10 @@
 import pandas as pd
 
-from src.tuning import tune_model, update_config_with_best_hps
-from src.data import BaldDataset
+from data_utils import adjust_class_distribution
 from src.config_class import BaldOrNotConfig
-from src.constants import N_CHANNELS_RGB, DEFAULT_IMG_SIZE
+from src.constants import DEFAULT_IMG_SIZE, N_CHANNELS_RGB
+from src.dataset import BaldDataset
+from src.tuning import tune_model, update_config_with_best_hps
 
 
 def main():
@@ -14,7 +15,7 @@ def main():
     # Initialize the datasets
     train_csv_path = config.paths.train_csv_path
     train_df = pd.read_csv(train_csv_path)
-    train_df = BaldDataset.adjust_class_distribution(
+    train_df = adjust_class_distribution(
         train_df,
         max_class_ratio=params.max_class_imbalance_ratio,
     )

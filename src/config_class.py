@@ -52,6 +52,13 @@ class TuningParams:
 
 
 @dataclass
+class AugmentationParams:
+    brightness_max_delta: float = 0.1
+    contrast_lower: float = 0.9
+    contrast_upper: float = 1.1
+
+
+@dataclass
 class Callback:
     type: str
     args: dict[str, any] = field(default_factory=dict)
@@ -87,6 +94,9 @@ class BaldOrNotConfig:
         default_factory=lambda: TrainingParams()
     )
     tuning_params: TuningParams = field(default_factory=lambda: TuningParams())
+    augmentation_params: AugmentationParams = field(
+        default_factory=lambda: AugmentationParams()
+    )
     callbacks: list[dict[str, Any]] = field(
         default_factory=lambda: [
             Callback(
@@ -119,6 +129,11 @@ class BaldOrNotConfig:
             TuningParams(**self.tuning_params)
             if isinstance(self.tuning_params, dict)
             else self.tuning_params
+        )
+        self.augmentation_params = (
+            AugmentationParams(**self.augmentation_params)
+            if isinstance(self.augmentation_params, dict)
+            else self.augmentation_params
         )
         self.callbacks = [
             Callback(**params).to_dict()

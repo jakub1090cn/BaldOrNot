@@ -6,9 +6,10 @@ from datetime import datetime
 import pandas as pd
 import tensorflow as tf
 
+from data_utils import adjust_class_distribution, get_classes_weights
 from src.config_class import BaldOrNotConfig
 from src.constants import DEFAULT_IMG_SIZE, N_CHANNELS_RGB
-from src.data import BaldDataset
+from src.dataset import BaldDataset
 from src.metrics import get_metrics
 from src.model import BaldOrNotModel
 from src.utils import check_log_exists
@@ -28,7 +29,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
     # Load and prepare training dataset
     train_csv_path = config.paths.train_csv_path
     train_df = pd.read_csv(train_csv_path)
-    train_df = BaldDataset.adjust_class_distribution(
+    train_df = adjust_class_distribution(
         train_df,
         max_class_ratio=config.training_params.max_class_imbalance_ratio,
     )
@@ -80,7 +81,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
                 # tf.keras.callbacks.TensorBoard(**callback_dict["args"])
                 tf.keras.callbacks.TensorBoard(
                     log_dir=os.path.join(output_dir_path, "logs"),
-                    histogram_freq=1
+                    histogram_freq=1,
                 )
             )
             logging.info(
@@ -94,7 +95,7 @@ def train_model(config: BaldOrNotConfig, output_dir_path: str):
 
     # Class weights configuration
     class_weight = (
-        BaldDataset.get_classes_weights(train_df)
+        get_classes_weights(train_df)
         if config.training_params.use_class_weight
         else None
     )
