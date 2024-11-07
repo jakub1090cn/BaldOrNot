@@ -17,29 +17,53 @@ def load_face_cascade() -> cv2.CascadeClassifier:
 
 
 def get_image_urls(config: GoogleApiConfig):
+    """
+    Retrieves image URLs based on a search query using Google Custom Search API.
+
+    Args:
+        config (GoogleApiConfig): Configuration object containing API key, CSE ID,
+                                  search parameters, and the desired number of images.
+
+    Returns:
+        list: A list of image URLs obtained from the search.
+    """
+    # Initialize the Google Custom Search API service
     service = build(
         "customsearch", "v1", developerKey=config.google_api_data.api_key
     )
-    image_urls = []
 
-    for start in range(1, config.search_params.num_images + 1, 10):
-        res = (
+    # Prepare variables for the query
+    image_urls = []
+    query = config.search_params.query
+    cse_id = config.google_api_data.cse_id
+    num_images = config.search_params.num_images
+    batch_size = (
+        10  # maximum number of results per page in a single API request
+    )
+
+    # Iterate in batches to retrieve the desired number of images
+    for start in range(1, num_images + 1, batch_size):
+        # Perform a search request with specified parameters
+        response = (
             service.cse()
             .list(
-                q=config.search_params.query,
-                cx=config.google_api_data.cse_id,
+                q=query,
+                cx=cse_id,
                 searchType="image",
-                num=min(10, config.search_params.num_images - len(image_urls)),
+                num=min(
+                    batch_size, num_images - len(image_urls)
+                ),  # Get up to batch_size images or remaining count
                 start=start,
             )
             .execute()
         )
 
-        if "items" not in res:
-            break
+        # Check if the response contains image results
+        if "items" not in response:
+            break  # Exit loop if there are no more results
 
-        for item in res["items"]:
-            image_urls.append(item["link"])
+        # Add each image URL to the list
+        image_urls.extend(item["link"] for item in response["items"])
 
     return image_urls
 
@@ -69,7 +93,7 @@ def detect_faces(
     return valid_faces
 
 
-def download_image(url: str) -> np.ndarray:
+def download_image(url: str) -> np.ndarray | None:
     """Downloads an image from the given URL.
 
     Args:
