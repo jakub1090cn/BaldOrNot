@@ -26,6 +26,7 @@ class BaldOrNotModel(tf.keras.Model):
         dense_units: int,
         freeze_backbone: bool,
         dropout_rate: float | None,
+        **kwargs
     ):
         super().__init__()
         self.backbone: tf.keras.Model = tf.keras.applications.ConvNeXtTiny(
