@@ -85,8 +85,47 @@ class BaldOrNotConfig:
 
 @dataclass
 class GoogleApiData:
-    api_key: str = "AIzaSyD0iJ9pZK97DpezoS9_PHp5wygF_lWIBRo"
-    cse_id: str = "f3fdf7bca753e43e6"
+    """
+    A dataclass to store authentication credentials for Google Custom Search API.
+
+    Attributes:
+        api_key (str): The API key for accessing Google APIs.
+        cse_id (str): The Custom Search Engine ID (CSE ID) for identifying the custom search engine.
+
+    Instructions to obtain `api_key` and `cse_id`:
+
+    1. Getting the `api_key` (API Key) from Google Cloud Console:
+       - Log into Google Cloud Console: https://console.cloud.google.com/
+       - Create a new project or select an existing one:
+           - Click the project selector at the top of the page and choose "New Project."
+           - Enter a project name, then click "Create."
+       - Enable the Google Custom Search API:
+           - In the left-hand menu, go to "Library" and search for "Custom Search API."
+           - Click "Enable" to activate the API for your project.
+       - Generate an API Key:
+           - Go to the "Credentials" section and click "Create Credentials."
+           - Choose "API Key" from the dropdown. Your new API key will be generated and displayed.
+           - Copy this key and assign it to `api_key` in this class.
+
+       **Note**: Keep the API key secure. For enhanced security, restrict the key to specific APIs or IP addresses in Google Cloud Console.
+
+    2. Getting the `cse_id` (Custom Search Engine ID):
+       - Go to Google Custom Search Engine page: https://cse.google.com/cse/
+       - Create a new custom search engine:
+           - Click "New search engine."
+           - Specify one or more sites for the search scope (e.g., `example.com`), or enter `*.com` to search across the web.
+           - Click "Create" to finalize the custom search engine.
+       - Retrieve the Custom Search Engine ID:
+           - Open the settings of your new search engine.
+           - Under the "Basics" section, find the "Search engine ID" — this is your `cse_id`.
+           - Copy this ID and assign it to `cse_id` in this class.
+
+    Security Reminder:
+        Keep credentials private and avoid storing them in public repositories.
+    """
+
+    api_key: str = ""
+    cse_id: str = ""
 
 
 @dataclass
