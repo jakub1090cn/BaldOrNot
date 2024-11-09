@@ -85,8 +85,8 @@ class BaldOrNotConfig:
 
 @dataclass
 class GoogleApiData:
-    api_key: str = ""
-    cse_id: str = ""
+    api_key: str = "AIzaSyD0iJ9pZK97DpezoS9_PHp5wygF_lWIBRo"
+    cse_id: str = "f3fdf7bca753e43e6"
 
 
 @dataclass
@@ -97,9 +97,7 @@ class SearchParams:
 
 @dataclass
 class DownloadParams:
-    download_path: str = (
-        r"C:\Users\user\Projekty\BaldOrNot\scrapping\downloaded_images"
-    )
+    scrapper_output_path: str = r"C:\Users\user\Projekty\BaldOrNot\scrapping"
 
 
 @dataclass

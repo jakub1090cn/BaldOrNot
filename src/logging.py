@@ -1,17 +1,17 @@
 import logging
 import os
-from src.constants import LOG_FILE_NAME
 
 
-def setup_logging(training_dir):
+def setup_logging(logging_dir, file_name):
     """
     Configures logging settings for the project.
     Logs will be saved to both a file and the console.
 
     Args:
-        training_dir (str): Directory where logs will be saved.
+        logging_dir (str): Directory where logs will be saved.
+        file_name (str): Name of the log file.
     """
-    log_file = os.path.join(training_dir, LOG_FILE_NAME)
+    log_file = os.path.join(logging_dir, file_name)
 
     # Create a custom logger
     logger = logging.getLogger()
@@ -33,4 +33,3 @@ def setup_logging(training_dir):
     logger.addHandler(file_handler)
 
     logging.info(f"Logging initialized. Logs will be saved to {log_file}")
-

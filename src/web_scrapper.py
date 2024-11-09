@@ -4,8 +4,13 @@ import cv2
 import numpy as np
 from googleapiclient.discovery import build
 from jsonargparse import CLI
+import logging
+from datetime import datetime
+
 
 from src.config_class import GoogleApiConfig
+from src.constants import SCRAPPING_LOG_FILE_NAME
+from src.logging import setup_logging
 
 
 def load_face_cascade() -> cv2.CascadeClassifier:
@@ -108,7 +113,7 @@ def download_image(url: str) -> np.ndarray | None:
         image_data = np.frombuffer(response.content, dtype=np.uint8)
         return cv2.imdecode(image_data, cv2.IMREAD_COLOR)
     except requests.exceptions.RequestException as e:
-        print(f"Failed to download {url}: {e}")
+        logging.error(f"Failed to download {url}: {e}")
         return None
 
 
@@ -123,15 +128,17 @@ def save_image_with_face(
         index (int): Image index, used in the filename.
         config (GoogleApiConfig): Configuration with the download path.
     """
-    download_path = config.download_params.download_path
+    download_path = os.path.join(
+        config.download_params.scrapper_output_path, "images"
+    )
     os.makedirs(download_path, exist_ok=True)
 
     if len(faces) == 1:
         image_filename = os.path.join(download_path, f"image_{index + 1}.jpg")
         cv2.imwrite(image_filename, image)
-        print(f"Saved image with 1 face: {image_filename}")
+        logging.info(f"Saved image with 1 face: {image_filename}")
     else:
-        print(f"Skipped image (found {len(faces)} faces).")
+        logging.info(f"Skipped image (found {len(faces)} faces).")
 
 
 def process_images(
@@ -147,22 +154,31 @@ def process_images(
         face_cascade (cv2.CascadeClassifier): Haar classifier for face detection.
     """
     for i, url in enumerate(image_urls):
-        print(f"Downloading {url}")
+        logging.info(f"Downloading {url}")
         image = download_image(url)
 
         if image is not None:
             faces = detect_faces(image, config, face_cascade)
             save_image_with_face(image, faces, i, config)
         else:
-            print(f"Could not decode image from {url}")
+            logging.info(f"Could not decode image from {url}")
 
 
 if __name__ == "__main__":
     config = CLI(GoogleApiConfig)
+
+    output_dir_path = os.path.join(
+        config.download_params.scrapper_output_path,
+        f"web_scrapper_logs_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}",
+    )
+    os.makedirs(output_dir_path, exist_ok=True)
+
+    setup_logging(output_dir_path, SCRAPPING_LOG_FILE_NAME)
+
     face_cascade = load_face_cascade()
 
-    print(f"Searching for '{config.search_params.query}' on Google...")
+    logging.info(f"Searching for '{config.search_params.query}' on Google...")
     image_urls = get_image_urls(config)
-    print(f"Found {len(image_urls)} images.")
+    logging.info(f"Found {len(image_urls)} images.")
     process_images(image_urls, config, face_cascade)
-    print("Download complete.")
+    logging.info("Download complete.")
