@@ -3,14 +3,9 @@ import requests
 import cv2
 import numpy as np
 from googleapiclient.discovery import build
-from jsonargparse import CLI
 import logging
-from datetime import datetime
-
 
 from src.config_class import GoogleApiConfig
-from src.constants import SCRAPPING_LOG_FILE_NAME
-from src.logging import setup_logging
 
 
 def load_face_cascade() -> cv2.CascadeClassifier:
